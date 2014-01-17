@@ -26,39 +26,47 @@
   (let [[metadata content]
         (split-file (slurp file :encoding (:encoding (config))))]
     [(prepare-metadata metadata)
-     (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))]))
+     (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
+
+     ]))
 
 (defn- read-html [file]
   (let [[metadata content]
         (split-file (slurp file :encoding (:encoding (config))))]
     [(prepare-metadata metadata) (delay content)]))
 
-(defn- read-org [file]
-  (if (not (:emacs (config)))
-    (do (error "Path to Emacs is required for org files.")
-        (System/exit 0)))
-  (let [metadata (prepare-metadata
-                  (apply str
-                         (take 500 (slurp file :encoding (:encoding (config))))))
-        content (delay
-                 (:out (sh (:emacs (config))
-                           "-batch" "-eval"
-                           (str
-                            "(progn "
-                            (apply str (map second (:emacs-eval (config))))
-                            " (find-file \"" (.getAbsolutePath file) "\") "
-                            (:org-export-command (config))
-                            ")"))))]
-    [metadata content]))
+(defn- slow-read-org 
+  [file]
+     (if (not (:emacs (config)))
+       (do (error "Path to Emacs is required for org files.")
+           (System/exit 0)))
+     (let [metadata (prepare-metadata
+                     (apply str
+                            (take 500 (slurp file :encoding (:encoding (config))))))
+           command [(:emacs (config))  "--batch" "--eval" (str
+                                                           "(progn "
+                                                           (apply str (map second (:emacs-eval (config))))
+                                                           " (find-file \"" (.getAbsolutePath file) "\") "
+                                                           (:org-export-command (config))
+                                                           ")") (:emacs-config (config))]
+           content (delay (:out (apply sh command)))]
+       (println "read" file)
+                                        ;(println "command" (clojure.string/join " " command))
+                                        ;(println "data" (force content))
+       [metadata content])
+     )
+
+; We really need to parse each file once. So we memoize the results
+(def read-org
+  (memoize slow-read-org))
+
 
 (defn- read-clj [file]
   (let [[metadata & content] (read-string
-                              (str \( (slurp file :encoding (:encoding (config))) \)))]
-    [metadata (delay (binding [*ns* (the-ns 'static.core)]
-                       (->> content 
-                            (map eval)
-                            last 
-                            html)))]))
+                              (str \( (slurp file :encoding (:encoding (config))) \)))
+        evalcontent (binding [*ns* (the-ns 'static.core)]
+                       (eval (last content)))]
+    [metadata evalcontent]))
 
 (defn- read-cssgen [file]
   (let [metadata {:extension "css" :template :none}
@@ -102,13 +110,17 @@
      (let [extension (FilenameUtils/getExtension (str template))]
        (cond (= extension "clj")
              [:clj
-              (-> (str (dir-path :templates) template)
+                (let [thecontent (-> (str (dir-path :templates) template)
                   (File.)
-                  (#(str \( (slurp % :encoding (:encoding (config))) \) ))
-                  read-string)]
+                  (#(str \( (slurp % :encoding (:encoding (config))) \) )))]
+                  (read-string thecontent)
+                  )
+              ]
              :default
              [:html
-              (load-template (dir-path :templates) template)])))))
+              (load-template (dir-path :templates) template)])))
+   )
+  )
 
 (defn write-out-dir [file str]
   (FileUtils/writeStringToFile
