@@ -86,6 +86,39 @@
 (defn url-for-tag [tag]
   (str "/tags/" tag "/index.html"))
 
+(defn footnotes-from-content
+  "goes through the content and parses footnotes out. this so that
+   we have support for footnotes not just in markdown but also in org
+  formats."
+  [c])
+
+(defn project-sidebar-list
+  "gives a list of all projects in the sidebar, with their respective url
+  projects that have the option 'toc:nil' set will be ignored"
+  []
+  (filter #(< 0 (count %)) (map (fn [f]
+         (let [[metadata content] (read-doc f)
+               url (site-url f (:extension metadata))]
+           ;(println url)
+           ;(println (:options metadata))
+           (if (= (:options metadata) "toc:nil")
+             {}
+             {:project (:title metadata) :link (str "/" url)})
+         )) (list-files :site)))
+  )
+
+(defn create-site-meta
+  "creates the same structure as post-meta, but for sites"
+  [metadata content]
+  (let [url (:url metadata)]
+    {:title (:title metadata)
+     :content content
+     :url url
+     :date ""
+     :footnotes []
+     :id (hash url)
+     :tags (:tags metadata)}))
+
 (defn create-post-meta
   "creates a dictionary with information for a content item / post"
   [f]
@@ -103,26 +136,14 @@
 
 (defn enhance-metadata
   "enhance the given metadata with additional information
-   so that we don't have to compute this in the template
-   The metadata that comes in looks like this:
-   {:url /2011/12/09/how-the-ipad-can-improve-focus/, :type :post, :tags reflections, :title How the iPad can improve focus}
-   for a post
-   or this
-   {:title Tags, :template default.clj}
-   for the tags
-   or this
-   {:title Archives, :template default.clj}
-   for archives
-   or this
-   {:type :site, :description alter-ego is a reactive AI library based on the concept of behavior trees., :tags clojure alter-ego behavior-tree, :title alter-ego - A Reactive AI Library}
-   for a  project"
+   so that we don't have to compute this in the template"
   [m]
-  ; every entry gets the author, the title
-  (assoc m :author (:site-author (static.config/config))
+  ; update with default-values for non-existing
+  (merge {:author (:site-author (static.config/config))
          :tags (:site-default-keywords (static.config/config))
          :site-title (:site-title (static.config/config))
          :categories (tag-sidebar-list)
-         :projects []))
+         :projects (project-sidebar-list)} m))
 
 (def ^:dynamic metadata nil)
 (def ^:dynamic content nil)
@@ -139,6 +160,8 @@
               (= type :none))
           (binding [*ns* (the-ns 'static.core)
                     metadata m content c]
+
+            ;(println "meta" metadata)
 
             (html (map #(eval %) template-string))
             )
@@ -157,12 +180,15 @@
     #(let [f %
            [metadata content] (read-doc f)]
 
-       (if (empty? content)
+       (if (empty? (force content))
          (warn (str "Empty Content: " f)))
+
+       ;(println "metadata for" f "is" metadata)
 
        (write-out-dir
         (site-url f (:extension metadata))
-        (template [(enhance-metadata (assoc metadata :type :site)) content])))
+        (template [(enhance-metadata (assoc metadata :type :site))
+                   [(create-site-meta metadata (force content))]])))
     (list-files :site))))
 
 ;;

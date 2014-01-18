@@ -22,9 +22,34 @@
                 h)))
           {} (re-seq #"([^:#\+]+): (.+)(\n|$)" metadata)))
 
+(defn- parse-markdown-footnotes [markdown]
+  "since pegdown has no footnotes-support, we will ust do
+   some replacement on the markdown itself in order to
+   generate footnotes
+
+   TODO: This code doesn't work yet."
+  (let [an-reg #"\[\^[a-zA-Z0-9]*\]"
+        fo-reg #"\[\^[a-zA-Z0-9]*?\].+$"
+        ans (re-seq an-reg markdown)
+        fos (re-seq fo-reg markdown)]
+    (println ans)
+    (println fos)
+    ; match them
+    (reduce (fn [m [a o]]
+              (println "change" a "against" "xa")
+              (println "change" o "against" "xo")
+              (-> m
+                  (replace a "xa")
+                  (replace o "xo")
+                  )
+              ) markdown (map vector ans fos))
+    )
+  )
+
 (defn- read-markdown [file]
   (let [[metadata content]
         (split-file (slurp file :encoding (:encoding (config))))]
+    ;(println "mkd" content)
     [(prepare-metadata metadata)
      (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
 
