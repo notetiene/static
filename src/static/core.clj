@@ -2,11 +2,12 @@
   (:gen-class)
   (:require [watchtower.core :as watcher]
             [hiccup-bridge.core :as hicv]
-            [net.cgrand.enlive-html :as enlive]
-            )
+            [clojure.walk :as walk]
+            [net.cgrand.enlive-html :as enlive])
   (:use [clojure.tools logging cli]
         [clojure.java.browse]
         [ring.adapter.jetty]
+        
         [ring.middleware.file]
         [ring.util.response]
         [hiccup core util page]
@@ -19,6 +20,19 @@
            (java.net URL)
            (org.apache.commons.io FileUtils FilenameUtils)
            (java.text SimpleDateFormat)))
+
+(defmacro define-template
+  "wrap a template in the necessary calls to return correctly"
+  [template-file & body]
+  `((fn []
+      ((enlive/template ~template-file [~'metadata ~'content]
+                        ~@body
+                        ) ~'metadata ~'content))))
+
+(defn template-path
+  "Return a template file descriptor for the template name"
+  [name]
+  (File. (str (static.io/dir-path :templates) name)))
 
 (defn setup-logging []
   (let [logger (java.util.logging.Logger/getLogger "")]
@@ -124,30 +138,6 @@
           (binding [*ns* (the-ns 'static.core)
                     metadata m content c]
 
-            ;(println "template-string-count" (count template-string))
-            ;(apply str (map #(println "nr" (count %)) template-string))
-            ;(apply str (map #(println "1" (nth % 0)) template-string))
-            ;(apply str (map #(println "2" (nth % 1)) template-string))
-            ;(apply str (map #(println "3" (nth % 2)) template-string))
-            ;(apply str (map #(println "4" (nth % 3)) template-string))
-            ;(apply str (map #(html (eval %)) template-string)))
-            ;(apply str (map #(enlive/emit* (eval %)) template-string)))
-            ;(enlive/emit* (map #(eval %) template-string)))
-            ;(spit "/tmp/testx.html" template-string)
-            ;(spit "/tmp/test.html" (doall (map #(eval %) template-string)))
-            ;(spit "/tmp/test3.html" (eval template-string))
-            ;(html (hicv/enlive-node->hiccup (map #(eval %) template-string)))
-            ;(apply str (map #(html (hicv/enlive-node->hiccup (eval %))) template-string))
-            ;(apply str (map #(html (hicv/enlive-node->hiccup (eval %))) template-string))
-            ;(println (map #(eval %) template-string))
-            ;(html (hicv/enlive-node->hiccup (map #(eval %) template-string)))
-
-            ;(println "contentmetadata" m)
-            ; content is just the HTML
-            ;(println "content-count" (count c))
-            ;(println "content-count2" (count (first c)))
-            ;(println "content" c)
-
             (html (map #(eval %) template-string))
             )
           (= type :html)
@@ -168,10 +158,6 @@
        (if (empty? content)
          (warn (str "Empty Content: " f)))
 
-       ;(println "site" f)
-       ;(println "metadata" metadata)
-       ;(println "content" content)
-       
        (write-out-dir
         (site-url f (:extension metadata))
         (template [(enhance-metadata (assoc metadata :type :site)) content])))
@@ -401,7 +387,7 @@
         (let [meta (enhance-metadata (assoc metadata :type :post :url (post-url f)))
               cont [(create-post-meta f)]]
           ;(println "content for post" (post-url f))
-          ;(println cont)
+          ;(println meta)
           (template [meta cont]))
          ))
     (list-files :posts))))
@@ -422,6 +408,13 @@
   (doto (File. (:out-dir (config)))
     (FileUtils/deleteDirectory)
     (.mkdir))
+
+  
+  ; Import the template helpers
+  (binding [*ns* (the-ns 'static.core)]
+    (let [filepath (str (static.io/dir-path :templates)
+                             (:base-template (static.config/config)))]
+      (load-file filepath)))
 
   (log-time-elapsed "Processing Public " (process-public))
   (log-time-elapsed "Processing Site " (process-site))
@@ -473,37 +466,6 @@
                                           (create)
                                           (catch Exception e
                                             (warn (str "Exception thrown while building site! " e))))))))
-
-
-(defn xx-main [& args]
-  (println (html [:html [:body [:h1 "test"] "<div class='peng'><h3>test</h3><script>alert('x);</script></div>"]]))
-  (comment let [files (list-files :posts)]
-    (doseq [file files]
-      (println file)
-      (let [[meta con] (read-doc file)]
-        (println (force con))
-        )
-     )
-    )
-  )
-
-; try the enlive stuff
-
-
-
-(defn xxx-main [& args]
-  (let [data (slurp "resources/htmltemplate/index.html")
-        ;data2 (e/emit* (index metadatathing []))
-        ]
-    ;(comment println (hicv/html->hiccup data))
-    ;(println data2)
-    
-    ;(println "---")
-    ;(println (e/select (e/html-resource (File. "resources/htmltemplate/index.html"))
-    ;                   [[:link (e/attr= :rel "alternate")]]))
-    ;(println "---")
-    )
-  )
 
 
 (defn -main [& args]

@@ -50,9 +50,6 @@
                                                            (:org-export-command (config))
                                                            ")") (:emacs-config (config))]
            content (delay (:out (apply sh command)))]
-       (println "read" file)
-                                        ;(println "command" (clojure.string/join " " command))
-                                        ;(println "data" (force content))
        [metadata content])
      )
 
