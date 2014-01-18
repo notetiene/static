@@ -1,4 +1,4 @@
-* Todos [41%]
+* Todos [46%]
 - [X] remove the old x-main functions
 - [X] remove unused / commented out code
 - [ ] handle footnotes formats for all html that goes into create-meta...
@@ -11,4 +11,4 @@
 - [ ] move all new options back to config.clj
 - [ ] where possible make map to pmap again
 - [ ] where possilbe, add some memoization
-- [ ] move html templates to public with _ for easier html working.
+- [X] move html templates to public with _ for easier html working.

@@ -30,9 +30,11 @@
                         ) ~'metadata ~'content))))
 
 (defn template-path
-  "Return a template file descriptor for the template name"
+  "Return a template file descriptor for the html template name
+   they're in public, so that one can just start a webserver there
+   and modify the html with all the css and images in place"
   [name]
-  (File. (str (static.io/dir-path :templates) name)))
+  (File. (str (static.io/dir-path :public) name)))
 
 (defn setup-logging []
   (let [logger (java.util.logging.Logger/getLogger "")]
@@ -398,9 +400,13 @@
   (let [in-dir (File. (dir-path :public))
         out-dir (File. (:out-dir (config)))]
     (doseq [f (map #(File. in-dir %) (.list in-dir))]
+      ; we ignore files in public that start with _ as these are
+      ; html templates
       (if (.isFile f)
-        (FileUtils/copyFileToDirectory f out-dir)
-        (FileUtils/copyDirectoryToDirectory f out-dir)))))
+        (when (not (= \_ (first (FilenameUtils/getBaseName (str f)))))
+          (FileUtils/copyFileToDirectory f out-dir))
+        (FileUtils/copyDirectoryToDirectory f out-dir))
+      )))
 
 (defn create 
   "Build Site."
