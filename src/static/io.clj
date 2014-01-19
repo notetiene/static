@@ -67,7 +67,8 @@
     ;(println "mkd" content)
     ;(System/exit 0)
     [(assoc (prepare-metadata metadata) :footnotes footnotes)
-     (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
+     ;(delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
+     (delay (.markdownToHtml (PegDownProcessor. (int (bit-or org.pegdown.Extensions/TABLES org.pegdown.Extensions/SMARTYPANTS org.pegdown.Extensions/AUTOLINKS org.pegdown.Extensions/FENCED_CODE_BLOCKS))) content))
 
      ]))
 
