@@ -130,7 +130,7 @@
      :content @content
      :url url
      :date date
-     :footnotes []
+     :footnotes (:footnotes metadata)
      :id (hash url)
      :tags (:tags metadata)}))
 

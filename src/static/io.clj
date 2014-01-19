@@ -4,6 +4,7 @@
         [cssgen]
         [hiccup core]
         [stringtemplate-clj core])
+  (:require clojure.pprint)
   (:use static.config :reload-all)
   (:import (org.pegdown PegDownProcessor)
            (java.io File)
@@ -27,30 +28,45 @@
    some replacement on the markdown itself in order to
    generate footnotes
 
-   TODO: This code doesn't work yet."
-  (let [an-reg #"\[\^[a-zA-Z0-9]*\]"
-        fo-reg #"\[\^[a-zA-Z0-9]*?\].+$"
-        ans (re-seq an-reg markdown)
+   this is very limited footnotes support. right now
+   the only markdown footnotes support is using [^name] in the text
+   and at the bottom [^name]: text\n. Everything in one line.
+   Additions welcome :)"
+  (let [fo-reg #"\[\^[a-zA-Z0-9]*?\]\:.+\n"
         fos (re-seq fo-reg markdown)]
-    (println ans)
-    (println fos)
-    ; match them
-    (reduce (fn [m [a o]]
-              (println "change" a "against" "xa")
-              (println "change" o "against" "xo")
-              (-> m
-                  (replace a "xa")
-                  (replace o "xo")
-                  )
-              ) markdown (map vector ans fos))
-    )
-  )
+    (if (> (count fos) 0)
+      (do
+        ; create the footnotes
+        (let [md1 (reduce (fn [[results markdown] footnote]
+                            [(conj results {:text (last (clojure.string/split footnote #":" 2))
+                                            :ref (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
+                                            :id (str "#fn" (last (re-find #"\d" footnote)))})
+                             (-> markdown
+                                ; replace the original footnote with nothing
+                                (clojure.string/replace footnote "")
+                                ; replace the text-footnote with an anchor/name
+                                (clojure.string/replace (first (clojure.string/split footnote #":" 2))
+                                         (format "<sup><a name='fn%s' href='#%s'>%s</a></sup>"
+                                                 (last (re-find #"\d" footnote)); only the first number
+                                                 (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
+                                                 (last (re-find #"\d" footnote)) 
+                                                 )))]
+                            ) [[] markdown] fos)]
+          ;(clojure.pprint/pprint md1)
+          ;(System/exit 0)
+          md1
+          )
+        )
+      [[] markdown] ; return no footnotes
+      )))
 
 (defn- read-markdown [file]
   (let [[metadata content]
-        (split-file (slurp file :encoding (:encoding (config))))]
+        (split-file (slurp file :encoding (:encoding (config))))
+        [footnotes content] (parse-markdown-footnotes content)]
     ;(println "mkd" content)
-    [(prepare-metadata metadata)
+    ;(System/exit 0)
+    [(assoc (prepare-metadata metadata) :footnotes footnotes)
      (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
 
      ]))

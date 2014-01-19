@@ -1,7 +1,7 @@
-* Todos [50%]
+* Todos [64%]
 - [X] remove the old x-main functions
 - [X] remove unused / commented out code
-- [ ] handle footnotes formats for all html that goes into create-meta...
+- [X] handle footnotes formats for all html that goes into create-meta...
 - [X] make the base template functions available to all
 - [ ] only load the base template if it exists
 - [X] add utility fnctions to template.clj, or remove it and add to core if it stays that empty
@@ -12,4 +12,5 @@
 - [ ] where possible make map to pmap again
 - [ ] where possilbe, add some memoization
 - [X] move html templates to public with _ for easier html working.
-- [ ] actually use the footnotes structures, right now they're part of either the markdown or the org html export. kinda difficult to get them out.
+- [X] actually use the footnotes structures, right now they're part of either the markdown or the org html export. kinda difficult to get them out.
+  
