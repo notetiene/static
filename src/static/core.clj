@@ -138,12 +138,21 @@
   "enhance the given metadata with additional information
    so that we don't have to compute this in the template"
   [m]
-  ; update with default-values for non-existing
-  (merge {:author (:site-author (static.config/config))
-         :tags (:site-default-keywords (static.config/config))
-         :site-title (:site-title (static.config/config))
-         :categories (tag-sidebar-list)
-         :projects (project-sidebar-list)} m))
+  ; this is certainly more complex than it should be. so much still to learn..
+  (let [tagfn (fn [tags]
+                (filter #(> (count %) 0)
+                        (if (string? tags) (clojure.string/split tags #" " ) tags)))
+        page-tags (tagfn (:tags m))
+        site-tags (tagfn (:site-default-keywords (static.config/config)))
+        merge-tags (vec (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags )))
+        tagstring (clojure.string/join ", " merge-tags)]
+    ; update with default-values for non-existing
+    ; keywords are the combination of the site keywords and the site/post specific keywords
+    (assoc (merge {:author (:site-author (static.config/config))
+                   :site-title (:site-title (static.config/config))
+                   :categories (tag-sidebar-list)
+                   :projects (project-sidebar-list)} m)
+      :tags tagstring)))
 
 (def ^:dynamic metadata nil)
 (def ^:dynamic content nil)
