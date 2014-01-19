@@ -1,4 +1,4 @@
-* Todos [64%]
+* Todos [71%]
 - [X] remove the old x-main functions
 - [X] remove unused / commented out code
 - [X] handle footnotes formats for all html that goes into create-meta...
@@ -8,7 +8,7 @@
 - [X] fix projects/sites, so that they can easily be merged into the index. maybe they have to return the meta
 - [ ] check if there's an easy to solution to merging javascript / css / compiling it
 - [X] merge the default.clj (etc) into a define-template call again
-- [ ] move all new options back to config.clj
+- [X] move all new options back to config.clj
 - [ ] where possible make map to pmap again
 - [ ] where possilbe, add some memoization
 - [X] move html templates to public with _ for easier html working.

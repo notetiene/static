@@ -4,17 +4,29 @@
 
 
 (let [defaults {:site-title "A Static Blog"
+                :site-title-page " - Page %s" ; The extension for older pages
+                :site-title-tag " - Tag %s" ; The extension for tags
                 :site-description "Default blog description"
-                :site-url "https://github.com/nakkaya/static"
+                :site-url "https://github.com/terhechte/static"
+                :site-default-keywords "tag1 tag2 tag3 tag3"
+                :site-author ""
                 :in-dir "resources/"
                 :out-dir "html/"
                 :default-template "default.clj"
+                :list-template "list.clj"
+                :base-template "base.clj"
                 :default-extension "html"
                 :encoding "UTF-8"
                 :posts-per-page 2
                 :blog-as-index true
                 :create-archives true
-                ;:org-export-command '(princ (org-no-properties (org-html-export-to-html nil nil nil 'string t nil)))}]
+                :archives-title "Archives"
+                :archives-title-month " - %s" ; for the individual month
+                :date-format-post "E, d MMM yyyy" ; the output dateformat for posts
+                :date-format-rss "E, d MMM yyyy HH:mm:ss Z" ; the date format for the rss feed
+                :date-format-archive "MMMM yyyy" ; the output dateformat for archive links
+                :emacs "/usr/bin/emacs"
+                :emacs-config " -q "
                 :org-export-command '(princ
                                       (org-no-properties
                                        (with-current-buffer
