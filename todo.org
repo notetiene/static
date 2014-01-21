@@ -15,4 +15,6 @@
 - [X] actually use the footnotes structures, right now they're part of either the markdown or the org html export. kinda difficult to get them out.
 - [X] toc:nil always has to be included, use another option for unpublished site stuff!
 - [X] change the archive, so that all stuff will be shown in one long list (with date entries) for better SEO performance
+- [ ] the distinctions between keywords/tags tags/categories projects/site site/page are confusing, it would be really nice to refactor most of that
+- [ ] keywords for orgmarkdown posts should also make it into the site keyword lists, not just tags, need to refactor enhance-metadata to also include (:keywords m)
   

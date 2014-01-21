@@ -131,11 +131,11 @@
         date (date-from-file f (:date-format-post (config)))]
     ;(println "create-post-meta")
     {:title (:title metadata)
-     :content "" ;@content
+     :content @content
      :url url
      :date date
      :javadate (javadate-from-file f)
-     :footnotes []; (:footnotes metadata)
+     :footnotes (:footnotes metadata)
      :id (hash url)
      :tags (:tags metadata)}))
 
@@ -147,7 +147,7 @@
   (let [tagfn (fn [tags]
                 (filter #(> (count %) 0)
                         (if (string? tags) (clojure.string/split tags #" " ) tags)))
-        page-tags (tagfn (:tags m))
+        page-tags (tagfn (str (:tags m) " " (:keywords m)))
         site-tags (tagfn (:site-default-keywords (static.config/config)))
         merge-tags (vec (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags )))
         tagstring (clojure.string/join ", " merge-tags)]
@@ -289,7 +289,7 @@
                           :description (:site-description (config))
                           }
                 enhanced-meta (enhance-metadata metadata)
-                content (map #(create-post-meta (nth % 2)) posts)] ;the 2nd positon is the fp which we use to get all info from this post
+                content (map #(create-post-meta (nth % 2)) (reverse posts))] ;the 2nd positon is the fp which we use to get all info from this post
             ;(println "content" content)
             (write-out-dir (url-for-tag tag)
                            (template [enhanced-meta [[tag content]]]))))
