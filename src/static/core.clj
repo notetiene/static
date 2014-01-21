@@ -61,7 +61,12 @@
   [in out date]
   (.format (SimpleDateFormat. out) (.parse (SimpleDateFormat. in) date)))
 
-(defn date-from-url
+(defn javadate-from-file
+  "Returns an actual boxed date object for time calculations"
+  [file]
+  (.parse (SimpleDateFormat. "yyyy-MM-dd") (re-find #"\d*-\d*-\d*" (FilenameUtils/getBaseName (str file)))))
+
+(defn date-from-file
   "parse a date from the url of the file"
   [file dateformat]
   (parse-date "yyyy-MM-dd" dateformat
@@ -94,18 +99,17 @@
 
 (defn project-sidebar-list
   "gives a list of all projects in the sidebar, with their respective url
-  projects that have the option 'toc:nil' set will be ignored"
+  projects that have the option 'published:no' set will be ignored"
   []
   (filter #(< 0 (count %)) (map (fn [f]
          (let [[metadata content] (read-doc f)
                url (site-url f (:extension metadata))]
            ;(println url)
            ;(println (:options metadata))
-           (if (= (:options metadata) "toc:nil")
+           (if (= (:options metadata) "published:no")
              {}
              {:project (:title metadata) :link (str "/" url)})
-         )) (list-files :site)))
-  )
+         )) (list-files :site))))
 
 (defn create-site-meta
   "creates the same structure as post-meta, but for sites"
@@ -124,13 +128,14 @@
   [f]
   (let [url (post-url f)
         [metadata content] (static.io/read-doc f)
-        date (date-from-url f (:date-format-post (config)))]
+        date (date-from-file f (:date-format-post (config)))]
     ;(println "create-post-meta")
     {:title (:title metadata)
-     :content @content
+     :content "" ;@content
      :url url
      :date date
-     :footnotes (:footnotes metadata)
+     :javadate (javadate-from-file f)
+     :footnotes []; (:footnotes metadata)
      :id (hash url)
      :tags (:tags metadata)}))
 
@@ -211,7 +216,7 @@
     [:item 
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config))) (post-url file)))]
-     [:pubDate (date-from-url file (:date-format-rss (config)))]
+     [:pubDate (date-from-file file (:date-format-rss (config)))]
      [:description (escape-html @content)]]))
 
 (defn create-rss 
@@ -287,7 +292,7 @@
                 content (map #(create-post-meta (nth % 2)) posts)] ;the 2nd positon is the fp which we use to get all info from this post
             ;(println "content" content)
             (write-out-dir (url-for-tag tag)
-                           (template [enhanced-meta content]))))
+                           (template [enhanced-meta [tag content]]))))
         (tag-map))))
 
 (defn random-posts
@@ -295,7 +300,7 @@
   (map #(let [f %
           posturl (post-url f)
           [postmetadata _] (read-doc f)
-          date (date-from-url f (:date-format-post (config)))]
+          date (date-from-file f (:date-format-post (config)))]
       {:date date :url posturl :title (:title postmetadata)}) 
    (take amount (shuffle (list-files :posts)))))
 
@@ -356,8 +361,22 @@
        (sort-by first)
        reverse))
 
-(defn create-archives 
-  "Create and write archive pages."
+(defn create-archives-one-page
+  "Create and write archive pages
+   Write one single page that lists everything"
+  []
+  (let [files (map #(create-post-meta %) (list-files :posts))
+        sorted (reverse (sort-by :javadate files))
+        annotated (map (fn [d] (let [[_ year month & rest] (clojure.string/split (:url d) #"/")]
+                                 (assoc d :year year :month month))) sorted)
+        grouped (reverse (vec (into (sorted-map) (group-by :year annotated))))
+        meta (enhance-metadata {:title (:archives-title (config))
+                                :template (:list-template (config))})]
+    (write-out-dir (str "archives/index.html") (template [meta grouped]))))
+
+(defn create-archives-by-month
+  "Create and write archive pages.
+   Write a page for each month and a page listing all months"
   []
   ;;create main archive page.
   (let [meta (enhance-metadata {:title (:archives-title (config)) :template (:list-template (config))})
@@ -443,6 +462,14 @@
         (FileUtils/copyDirectoryToDirectory f out-dir))
       )))
 
+(defn load-base-template
+  "load the base template, that contains template defaults"
+  []
+  (binding [*ns* (the-ns 'static.core)]
+    (let [filepath (str (static.io/dir-path :templates)
+                        (:base-template (static.config/config)))]
+      (load-file filepath))))
+
 (defn create 
   "Build Site."
   [] 
@@ -450,29 +477,25 @@
     (FileUtils/deleteDirectory)
     (.mkdir))
 
-  
   ; Import the template helpers
-  (binding [*ns* (the-ns 'static.core)]
-    (let [filepath (str (static.io/dir-path :templates)
-                             (:base-template (static.config/config)))]
-      (load-file filepath)))
+  (load-base-template)
 
-  (log-time-elapsed "Processing Public " (process-public))
-  (log-time-elapsed "Processing Site " (process-site))
+  ;(log-time-elapsed "Processing Public " (process-public))
+  ;(log-time-elapsed "Processing Site " (process-site))
 
   (if (pos? (-> (dir-path :posts) (File.) .list count))
     (do 
-      (log-time-elapsed "Processing Posts " (process-posts))
-      (log-time-elapsed "Creating RSS " (create-rss))
-      (log-time-elapsed "Creating Tags " (create-tags))
+      ;(log-time-elapsed "Processing Posts " (process-posts))
+      ;(log-time-elapsed "Creating RSS " (create-rss))
+      ;(log-time-elapsed "Creating Tags " (create-tags))
       
       (when (:create-archives (config))
-        (log-time-elapsed "Creating Archives " (create-archives)))
+        (log-time-elapsed "Creating Archives " (create-archives-one-page)))
       
-      (log-time-elapsed "Creating Sitemap " (create-sitemap))
-      (log-time-elapsed "Creating Aliases " (create-aliases))
+      ;(log-time-elapsed "Creating Sitemap " (create-sitemap))
+      ;(log-time-elapsed "Creating Aliases " (create-aliases))
 
-      (when (:blog-as-index (config)) 
+      (when nil (:blog-as-index (config)) 
         ; Create the latest-post archives, i.e. create a index.html with n posts
         ; under latest-posts/ and link them together
         (log-time-elapsed "Creating Latest Posts " (create-latest-posts))
