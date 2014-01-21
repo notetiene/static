@@ -275,7 +275,7 @@
   "create a list with all tags that link to the individual tag entries"
   []
   (map (fn [[tag posts]]
-         {:tag tag :url (url-for-tag tag)}) (tag-map)))
+         {:tag tag :url (url-for-tag tag) :count (count posts)}) (tag-map)))
 
 (defn create-tags 
   "Create and write tags page."
@@ -292,7 +292,7 @@
                 content (map #(create-post-meta (nth % 2)) posts)] ;the 2nd positon is the fp which we use to get all info from this post
             ;(println "content" content)
             (write-out-dir (url-for-tag tag)
-                           (template [enhanced-meta [tag content]]))))
+                           (template [enhanced-meta [[tag content]]]))))
         (tag-map))))
 
 (defn random-posts
@@ -480,22 +480,22 @@
   ; Import the template helpers
   (load-base-template)
 
-  ;(log-time-elapsed "Processing Public " (process-public))
-  ;(log-time-elapsed "Processing Site " (process-site))
+  (log-time-elapsed "Processing Public " (process-public))
+  (log-time-elapsed "Processing Site " (process-site))
 
   (if (pos? (-> (dir-path :posts) (File.) .list count))
     (do 
-      ;(log-time-elapsed "Processing Posts " (process-posts))
-      ;(log-time-elapsed "Creating RSS " (create-rss))
-      ;(log-time-elapsed "Creating Tags " (create-tags))
+      (log-time-elapsed "Processing Posts " (process-posts))
+      (log-time-elapsed "Creating RSS " (create-rss))
+      (log-time-elapsed "Creating Tags " (create-tags))
       
       (when (:create-archives (config))
         (log-time-elapsed "Creating Archives " (create-archives-one-page)))
       
-      ;(log-time-elapsed "Creating Sitemap " (create-sitemap))
-      ;(log-time-elapsed "Creating Aliases " (create-aliases))
+      (log-time-elapsed "Creating Sitemap " (create-sitemap))
+      (log-time-elapsed "Creating Aliases " (create-aliases))
 
-      (when nil (:blog-as-index (config)) 
+      (when (:blog-as-index (config)) 
         ; Create the latest-post archives, i.e. create a index.html with n posts
         ; under latest-posts/ and link them together
         (log-time-elapsed "Creating Latest Posts " (create-latest-posts))
