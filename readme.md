@@ -1,4 +1,3 @@
-
 # Introduction:
 
 Static is a Static Site Generator written in Clojure. This is a fork of the original static <http://nakkaya.com/static.html> from Nurullah Akkaya. I chose Nurullah's Static because it had lots of great IO features, but had to fork it because it differet in a couple of ways from what I wanted my blog to be:
@@ -243,6 +242,7 @@ With that in mind, lets see a simple example:
 
 **public/<sub>index</sub>.html**
 
+``` html
     <html>
     <head><title>title</title></head>
     <body>
@@ -258,6 +258,7 @@ With that in mind, lets see a simple example:
         </div>
     </body>
     </html>
+```
 
 This is straightforward html and a simple model to explain templating. When this is being used to render the **index.html** of our blog, we want the following to happen.
 
@@ -281,6 +282,7 @@ Enlive works in a way where you define a selector and then an operation that has
 
 **templates/base.clj**
 
+``` Clojure
     ; Static offers a function that translates the name of your html template to the correct path
     ; We bind this to a var so we can access it easily
     (def base-template-file (static.core/template-path \"_index.html\"))
@@ -298,12 +300,14 @@ Enlive works in a way where you define a selector and then an operation that has
         ; we tell enive to replace the 'content' of the :div tag with the contents of the url var
         [:div] (enlive/content url) 
         )
+```
 
 We're almost done. We have defined our article snippet, now we just need to maps this snippet against all the posts that we have.
 This is being done in our default template.
 
 **templates/default.clj**
 
+``` Clojure
     ; The define-template is a macro in core.clj that helps us define simple templates
     (define-template base-template-file
       ; We replace the title contents with our site title, or, with the post title, if the author define one
@@ -315,6 +319,7 @@ This is being done in our default template.
       ; And finally, we remove the list, as we don't need it. Returning nil for an element will get rid of it
       [:#list] nil
     )
+```
 
 That's it! Once these selectors are in place, you're done and your content will be written out. Here're some helpful tips on how to write good selectors:
 
@@ -386,6 +391,7 @@ If you're interested in blogging with Emacs Org Mode, you should have a look at 
 
 I'm basically starting the command line Emacs with "-q" and then evaluating the following EmacsLisp in the first line: "(setq user-emacs-directory "resources/emacs/")". This will tell Emacs to not look in ~/.emacs.d but in resources/emacs so it will not load all the packages you have installed but only what you actually need it to. And that is added via seperate add-to-list calls:
 
+``` Lisp
     '(setq user-emacs-directory "resources/emacs/")
     '(setq vc-handled-backends ())
     '(add-to-list 'load-path "~/.emacs.d/org-mode/lisp")
@@ -395,6 +401,7 @@ I'm basically starting the command line Emacs with "-q" and then evaluating the 
     '(require 'htmlize)
     '(require 'org)
     '(require 'ob)
+```
 
 # License
 
