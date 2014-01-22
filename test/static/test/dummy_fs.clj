@@ -23,16 +23,8 @@ Some dummy file for unit testing.")
   
   (spit (File. "resources/site/dummy_clj.clj")
 	"{:title \"Dummy Clj File\"}
-[:h3 \"Dummy Clj Content\"]")
-
-(spit 
- (File. "resources/site/html_template.markdown")
- "---
-TITLE: Html Template Test
-TEMPLATE: temp
----
-
-Dummy Html Post Template"))
+(map #(static.core/create-post-meta %) (take 2 (reverse (static.io/list-files :posts))))")
+)
 
 (defn- create-dummy-posts []
   (spit 
@@ -128,10 +120,53 @@ Sum 1 and 2
 
 org alias test"))
 
+(defn- create-html-template []
+  (spit (File. "resources/public/_index.html") "
+<html>
+<head><title>title</title></head>
+<body>
+<div id='content'>
+<article><h1>text</h1><div>content</div></article>
+<div id='list'>
+<h1>title</h1>
+<div>entry</div>
+</div>
+</div>
+</body>
+</html>
+"))
+
+(defn- create-base-template []
+  (spit (File. "resources/templates/base.clj") "(def base-template-file (static.core/template-path \"_index.html\"))
+
+(enlive/defsnippet article-template base-template-file [:article]
+  [{:keys [title url]}]
+    [:h1] (enlive/content title)
+    [:div] (enlive/content url)
+    )
+
+(enlive/defsnippet list-template base-template-file [:#list]
+  [[headline content]]
+  [:h1] (enlive/content headline)
+  [:div] (enlive/content (map #(article-template %) content))
+  )
+"))
+
 (defn- create-template []
-  (spit (File. "resources/templates/temp.clj") "content")
-  (spit (File. "resources/templates/temp.st")
-        "<html><title>$title$</title><body>$content$</body></html>"))
+  ; Create the default template, that creates the selectors (for a better example have a look at my blog repo)
+  (spit (File. "resources/templates/temp.clj") "
+(define-template base-template-file
+     [:head :title] (enlive/content (if-let [t (:title metadata)] t (:site-title metadata)))
+     [:#content] (enlive/content (map #(article-template %) content))
+     [:#list] nil
+  ) "))
+
+(defn- create-list-template []
+  (spit (File. "resources/templates/list.clj") "(define-template base-template-file
+     [:head :title] (enlive/content (if-let [t (:title metadata)] t (:site-title metadata)))
+     [:#content] (enlive/content (map #(list-template %) content))
+     ;[:#list] nil
+  )"))
 
 (defn- create-static-file []
   (spit (File. "resources/public/dummy.static") "Hello, World!!"))
@@ -145,6 +180,7 @@ org alias test"))
  :in-dir \"resources/\"
  :out-dir \"html/\"
  :default-template \"temp.clj\"
+ :list-template \"list.clj\"
  :encoding \"UTF-8\"
  :posts-per-page 2
  :blog-as-index true
@@ -155,5 +191,8 @@ org alias test"))
   (create-site)
   (create-static-file)
   (create-dummy-posts)
+  (create-base-template)
+  (create-html-template)
   (create-template)
+  (create-list-template)
   (create-config))

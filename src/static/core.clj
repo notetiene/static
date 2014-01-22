@@ -91,12 +91,6 @@
 (defn url-for-tag [tag]
   (str "/tags/" tag "/index.html"))
 
-(defn footnotes-from-content
-  "goes through the content and parses footnotes out. this so that
-   we have support for footnotes not just in markdown but also in org
-  formats."
-  [c])
-
 (defn project-sidebar-list
   "gives a list of all projects in the sidebar, with their respective url
   projects that have the option 'published:no' set will be ignored"
@@ -468,7 +462,11 @@
   (binding [*ns* (the-ns 'static.core)]
     (let [filepath (str (static.io/dir-path :templates)
                         (:base-template (static.config/config)))]
-      (load-file filepath))))
+      (println filepath)
+      (try
+        (load-file filepath)
+        (catch Exception e (do (println e) (info "Base template not found, continuing without."))))
+      )))
 
 (defn create 
   "Build Site."

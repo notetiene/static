@@ -1,4 +1,4 @@
-* Todos [75%]
+* Todos [72%]
 - [X] remove the old x-main functions
 - [X] remove unused / commented out code
 - [X] handle footnotes formats for all html that goes into create-meta...
@@ -16,5 +16,7 @@
 - [X] toc:nil always has to be included, use another option for unpublished site stuff!
 - [X] change the archive, so that all stuff will be shown in one long list (with date entries) for better SEO performance
 - [ ] the distinctions between keywords/tags tags/categories projects/site site/page are confusing, it would be really nice to refactor most of that
-- [ ] keywords for orgmarkdown posts should also make it into the site keyword lists, not just tags, need to refactor enhance-metadata to also include (:keywords m)
+- [X] keywords for orgmarkdown posts should also make it into the site keyword lists, not just tags, need to refactor enhance-metadata to also include (:keywords m)
+- [ ] now that the api is stable again, take care of the tests
+- [ ] create an introductory description
   

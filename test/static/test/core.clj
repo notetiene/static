@@ -28,35 +28,24 @@
     (is (= "Some dummy file for unit testing."
 	   (re-find #"Some dummy file for unit testing." @content)))))
 
-(deftest test-cssgen
-  (let [[metadata content] (read-doc "resources/site/style.cssgen")]
-    (is (= "font-size: 1em;" (re-find #"font-size: 1em;" @content)))))
-
-(deftest test-org
-  (let [[metadata content] (read-doc (File. "resources/posts/2050-07-07-dummy-future-post-7.org"))] 
-    (is (= "org-mode org-babel"  (:tags metadata)))
-    (is (= "Dummy org-mode post" (:title metadata)))
-    (is (= "Sum 1 and 2" (re-find #"Sum 1 and 2" @content)))))
+; I've removed the org test, as it requires the corret setup of emacs
+;(deftest test-org
+;  (let [[metadata content] (read-doc (File. "resources/posts/2050-07-07-dummy-future-post-7.org"))] 
+;    (is (= "org-mode org-babel"  (:tags metadata)))
+;    (is (= "Dummy org-mode post" (:title metadata)))
+;    (is (= "Sum 1 and 2" (re-find #"Sum 1 and 2" @content)))))
 
 (deftest test-clj
   (let [[metadata content] (read-doc (File. "resources/site/dummy_clj.clj"))] 
     (is (= "Dummy Clj File" (:title metadata)))
-    (is (= "Dummy Clj Content" (re-find #"Dummy Clj Content" @content)))
-    (is (= "<h3>" (re-find #"<h3>" @content)))))
+    (is (= 2 (count content)))
+    (is (= "dummy future post 8" (:title (first content))))))
 
 (deftest test-io
   (is (= (count (list-files :posts)) 8))
   (is (.exists (File. "html/first-alias/index.html")))
   (is (.exists (File. "html/a/b/c/alias/index.html")))
   (is (.exists (File. "html/second-alias/index.html"))))
-
-(deftest test-st-template
-  (let [file (File. "html/html_template.html")
-	content (slurp file)]
-    (is (= "Dummy Html Post Template"
-    	   (re-find #"Dummy Html Post Template" content)))
-    (is (= "<title>Html Template Test</title>"
-    	   (re-find #"<title>Html Template Test</title>" content)))))
 
 (deftest test-rss-feed
   (let [rss (File. "html/rss-feed")
@@ -85,15 +74,15 @@
     	   (re-find #"<loc>http://www.dummy.com/dummy.html</loc>" 
 		    content)))))
 
-(deftest test-rss-feed
-  (let [tags (File. "html/tags/index.html")
+(deftest test-tags
+  (let [tags (File. "html/tags/25e9/index.html")
 	content (slurp tags)] 
     (is (= 5 (count ((tag-map) "same"))))
     (is (= true (.exists tags)))
-    (is (= "<a name=\"e4e8\">e4e8</a>" 
-	   (re-find #"<a name=\"e4e8\">e4e8</a>" content)))
-    (is (= "<a href=\"/2050/01/01/dummy-future-post-1/\">"
-    	   (re-find #"<a href=\"/2050/01/01/dummy-future-post-1/\">" 
+    (is (= "<h1>dummy future post 2</h1>" 
+	   (re-find #"<h1>dummy future post 2</h1>" content)))
+    (is (= "Dummy Site - Tag 25e9"
+    	   (re-find #"Dummy Site - Tag 25e9" 
 		    content)))))
 
 (deftest test-latest-posts
@@ -101,10 +90,8 @@
     (is (= true (.exists page)))))
 
 (deftest test-archives
-  (let [index (File. "html/archives/index.html")
-	a-2050-01 (File. "html/archives/2050/01/index.html")] 
-    (is (= true (.exists index)))
-    (is (= true (.exists a-2050-01)))))
+  (let [index (File. "html/archives/index.html")] 
+    (is (= true (.exists index)))))
 
 (deftest test-process-posts
   (let [post1 (File. "html/2050/02/02/dummy-future-post-2/index.html")
@@ -112,11 +99,33 @@
     (is (= true (.exists post1)))
     (is (= true (.exists post2)))))
 
+(deftest test-tag-sidebar
+  (let [content (tag-sidebar-list)
+        entry (first content)]
+    (is (= "25e9" (:tag entry)))
+    (is (= 1 (:count entry)))
+    (is (= 13 (count content)))))
+
+(deftest test-project-sidebar
+  (let [content (project-sidebar-list)]
+    (is (= 3 (count content)))
+    (is (= "dummy content" (:project (first content))))))
+
+(deftest test-enhance-meta
+  (let [org-meta {:tags "tag1 tag2 tag3" :keywords "tag3 tag4 tag5" :author "Dr. No"}
+        enh-meta (enhance-metadata org-meta)]
+    (is (= "tag1, tag2, tag3, tag4, tag5" (:tags enh-meta)))
+    (is (= "tag3 tag4 tag5" (:keywords enh-meta)))
+    (is (= "Dr. No" (:author enh-meta)))
+    (is (= "Dummy Site" (:site-title enh-meta)))
+    (is (= 13 (count (:categories enh-meta))))
+    (is (= 3 (count (:projects enh-meta))))))
+
 (deftest test-process-site
   (let [html (File. "html/dummy.html")
 	static (File. "html/dummy.static")] 
     (is (= true (.exists html)))
     (is (= true (.exists static)))
-    (is (= "Some dummy file for unit testing."
-	   (re-find #"Some dummy file for unit testing." (slurp html))))
+    (is (= "<h1>dummy content</h1>"
+	   (re-find #"<h1>dummy content</h1>" (slurp html))))
     (is (= "Hello, World!!" (re-find #"Hello, World!!" (slurp static))))))
