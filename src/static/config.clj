@@ -25,6 +25,7 @@
                 :date-format-post "E, d MMM yyyy" ; the output dateformat for posts
                 :date-format-rss "E, d MMM yyyy HH:mm:ss Z" ; the date format for the rss feed
                 :date-format-archive "MMMM yyyy" ; the output dateformat for archive links
+                :rss-description-char-limit 120 ; if this is 0, include all content in the rss, otherwise limtit to the given amount of chars
                 :emacs "/usr/bin/emacs"
                 :emacs-config " -q "
                 :org-export-command '(princ

@@ -206,12 +206,16 @@
 (defn post-xml
   "Create RSS item node."
   [file]
-  (let [[metadata content] (read-doc file)]
+  (let [[metadata content] (read-doc file)
+        limit (:rss-description-char-limit (config))
+        description (if (and (> limit 0) (> (count (@content)) limit)
+                         (str (subs @content 0 limit) " …")
+                         @content))] 
     [:item 
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config))) (post-url file)))]
      [:pubDate (date-from-file file (:date-format-rss (config)))]
-     [:description (escape-html @content)]]))
+     [:description (escape-html description)]]))
 
 (defn create-rss 
   "Create RSS feed."
