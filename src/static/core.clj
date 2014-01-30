@@ -208,9 +208,9 @@
   [file]
   (let [[metadata content] (read-doc file)
         limit (:rss-description-char-limit (config))
-        description (if (and (> limit 0) (> (count (@content)) limit)
-                         (str (subs @content 0 limit) " …")
-                         @content))] 
+        description (if (and (> limit 0) (> (count @content) limit))
+                         (str (subs @content 0 limit) "… ")
+                         @content)] 
     [:item 
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config))) (post-url file)))]
