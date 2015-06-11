@@ -6,7 +6,6 @@
 - [ ] only load the base template if it exists
 - [X] add utility fnctions to template.clj, or remove it and add to core if it stays that empty
 - [X] fix projects/sites, so that they can easily be merged into the index. maybe they have to return the meta
-- [ ] check if there's an easy to solution to merging javascript / css / compiling it
 - [X] merge the default.clj (etc) into a define-template call again
 - [X] move all new options back to config.clj
 - [ ] where possible make map to pmap again
