@@ -168,6 +168,7 @@ Static is a Static Site Generator written in Clojure. This is a fork of the orig
       set. (["/first-alias/index.html", "/second-alias/index.html"])
       Place the full path of the alias (place to redirect from) inside
       the destination post.
+    - inactive - set to 'true' if this page is not published yet. This allows to keep unfinished drafts in the post folder
 
    Any other setting you provide can be accessed from within your
    template.

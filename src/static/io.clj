@@ -91,6 +91,7 @@
                                                            " (find-file \"" (.getAbsolutePath file) "\") "
                                                            (:org-export-command (config))
                                                            ")") (:emacs-config (config))]
+           out (println command)
            content (delay (:out (apply sh command)))]
        [metadata content])
      )
@@ -132,16 +133,29 @@
         (= dir :posts) (str (:in-dir (config)) "posts/")
         :default (throw (Exception. "Unknown Directory."))))
 
+(defn- active-post? [[filename [metadata content]]]
+  (if (:inactive metadata)
+    nil
+    true))
+
+(defn- filter-inactive-posts [posts]
+  (let [meta (pmap read-doc posts)
+        comb (into [] (zipmap posts meta))
+        filtered (filter active-post? comb)
+        posts (map first filtered)]
+    posts))
+
 (defn list-files [d]
   (let [d (File. (dir-path d))]
     (if (.isDirectory d)
       (sort
+       (filter-inactive-posts
        (FileUtils/listFiles d (into-array ["markdown"
                                            "md"
                                            "clj"
                                            "cssgen"
                                            "org"
-                                           "html"]) true)) [] )))
+                                           "html"]) true))) [] )))
 
 (def read-template
   (memoize
