@@ -17,7 +17,12 @@
 
 (defn- prepare-metadata [metadata]
   (reduce (fn [h [_ k v]]
-            (let [key (keyword (.toLowerCase k))]
+            (let [key (keyword (.toLowerCase k))
+                   ;; create a list of keyword tags
+                   h (case key
+                       :tags (assoc h :keyword-tags (map keyword (clojure.string/split v #" ")))
+                       :keywords (assoc h :keyword-keywords (map keyword (clojure.string/split v #" ")))
+                       h)]
               (if (not (h key))
                 (assoc h key v)
                 h)))

@@ -131,7 +131,10 @@
      :javadate (javadate-from-file f)
      :footnotes (:footnotes metadata)
      :id (hash url)
-     :tags (:tags metadata)}))
+     :tags (:tags metadata)
+     :keywords (:keywords metadata)
+     :keyword-keywords (:keyword-keywords metadata)
+     :keyword-tags (:keyword-tags metadata)}))
 
 (defn enhance-metadata
   "enhance the given metadata with additional information
@@ -144,12 +147,25 @@
         page-tags (tagfn (str (:tags m) " " (:keywords m)))
         site-tags (tagfn (:site-default-keywords (static.config/config)))
         merge-tags (vec (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags )))
-        tagstring (clojure.string/join ", " merge-tags)]
+        tagstring (clojure.string/join ", " merge-tags)
+        ;; we also need the complete list of posts with their tags
+        files (list-files :posts)
+        posts (map #(-> (read-doc %)
+                       first
+                       (assoc :url (post-url %))
+                       (assoc :date (date-from-file % (:date-format-post (config))))
+                       (select-keys [:title :url :tags :keyword-tags :date :keywords :keyword-keywords])
+                       )
+                 files)
+        ;posts (map (fn [f] (assoc (first (read-doc f)) :url (post-url f))) files)
+        ;posts (map #(select-keys % [:title :url :tags :date]) posts)
+         ]
     ; update with default-values for non-existing
     ; keywords are the combination of the site keywords and the site/post specific keywords
     (assoc (merge {:author (:site-author (static.config/config))
                    :site-title (:site-title (static.config/config))
                    :categories (tag-sidebar-list)
+                   :postlist posts
                    :projects (project-sidebar-list)} m)
       :tags tagstring)))
 
