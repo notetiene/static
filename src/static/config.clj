@@ -32,8 +32,7 @@
                                       (org-no-properties
                                        (with-current-buffer
                                          (org-html-export-as-html nil nil nil t nil)
-                                         (buffer-string))))
-                }]
+                                         (buffer-string))))}]
   
   (def config
     (memoize

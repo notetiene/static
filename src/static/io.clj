@@ -28,87 +28,86 @@
           {} (re-seq #"([^:#\+]+): (.+)(\n|$)" metadata)))
 
 (defn- parse-markdown-footnotes [markdown]
-  "since pegdown has no footnotes-support, we will ust do
+  "Since pegdown has no footnotes-support, we will just do
    some replacement on the markdown itself in order to
-   generate footnotes
+   generate footnotes.
 
-   this is very limited footnotes support. right now
+   This is very limited footnotes support. Right now
    the only markdown footnotes support is using [^name] in the text
    and at the bottom [^name]: text\n. Everything in one line.
    Additions welcome :)"
   (let [fo-reg #"\[\^[a-zA-Z0-9]*?\]\:.+\n"
         fos (re-seq fo-reg markdown)]
     (if (> (count fos) 0)
-      (do
-        ; create the footnotes
-        (let [md1 (reduce (fn [[results markdown] footnote]
-                            [(conj results {:text (last (clojure.string/split footnote #":" 2))
-                                            :ref (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
-                                            :id (str "#fn" (last (re-find #"\d" footnote)))})
-                             (-> markdown
-                                ; replace the original footnote with nothing
-                                (clojure.string/replace footnote "")
-                                ; replace the text-footnote with an anchor/name
-                                (clojure.string/replace (first (clojure.string/split footnote #":" 2))
-                                         (format "<sup><a name='fn%s' href='#%s'>%s</a></sup>"
-                                                 (last (re-find #"\d" footnote)); only the first number
-                                                 (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
-                                                 (last (re-find #"\d" footnote)) 
-                                                 )))]
-                            ) [[] markdown] fos)]
-          ;(System/exit 0)
-          md1
-          )
-        )
-      [[] markdown] ; return no footnotes
-      )))
+      ;; create the footnotes
+      (let [md1 (reduce (fn [[results markdown] footnote]
+                          [(conj results {:text (last (clojure.string/split footnote #":" 2))
+                                          :ref (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
+                                          :id (str "#fn" (last (re-find #"\d" footnote)))})
+                           (-> markdown
+                               ;; replace the original footnote with nothing
+                               (clojure.string/replace footnote "")
+                               ;; replace the text-footnote with an anchor/name
+                               (clojure.string/replace
+                                (first (clojure.string/split footnote #":" 2))
+                                (format "<sup><a name='fn%s' href='#%s'>%s</a></sup>"
+                                        (last (re-find #"\d" footnote)); only the first number
+                                        (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
+                                        (last (re-find #"\d" footnote)))))])
+                        [[] markdown] fos)]
+        md1)
+      ;; else return no footnotes
+      [[] markdown])))
 
 (defn- read-markdown [file]
   (let [[metadata content]
         (split-file (slurp file :encoding (:encoding (config/config))))
         [footnotes content] (parse-markdown-footnotes content)]
-    ;(println "mkd" content)
-    ;(System/exit 0)
     [(assoc (prepare-metadata metadata) :footnotes footnotes)
      ;(delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
-     (delay (.markdownToHtml (PegDownProcessor. (int (bit-or org.pegdown.Extensions/TABLES org.pegdown.Extensions/SMARTYPANTS org.pegdown.Extensions/AUTOLINKS org.pegdown.Extensions/FENCED_CODE_BLOCKS))) content))
-
-     ]))
+     (delay (.markdownToHtml (PegDownProcessor.
+                              (int
+                               (bit-or org.pegdown.Extensions/TABLES
+                                       org.pegdown.Extensions/SMARTYPANTS
+                                       org.pegdown.Extensions/AUTOLINKS
+                                       org.pegdown.Extensions/FENCED_CODE_BLOCKS)))
+                             content))]))
 
 (defn- read-html [file]
   (let [[metadata content]
         (split-file (slurp file :encoding (:encoding (config/config))))]
     [(prepare-metadata metadata) (delay content)]))
 
-(defn- slow-read-org 
+(defn- slow-read-org
   [file]
-     (if (not (:emacs (config/config)))
-       (do (log/error "Path to Emacs is required for org files.")
-           (System/exit 0)))
-     (let [metadata (prepare-metadata
-                     (apply str
-                            (take 500 (slurp file :encoding (:encoding (config/config))))))
-           command [(:emacs (config/config))  "--batch" "--eval" (str
-                                                           "(progn "
-                                                           (apply str (map second (:emacs-eval (config/config))))
-                                                           " (find-file \"" (.getAbsolutePath file) "\") "
-                                                           (:org-export-command (config/config))
-                                                           ")") (:emacs-config (config/config))]
-           out (println command)
-           content (delay (:out (apply sh/sh command)))]
-       [metadata content])
-     )
+  (if (not (:emacs (config/config)))
+    (do (log/error "Path to Emacs is required for org files.")
+        (System/exit 0)))
+  (let [metadata (prepare-metadata
+                  (apply str
+                         (take 500 (slurp file :encoding (:encoding (config/config))))))
+        command [(:emacs (config/config))
+                 "--batch" "--eval" (str "(progn "
+                                         (apply str (map second (:emacs-eval (config/config))))
+                                         " (find-file \""
+                                         (.getAbsolutePath file)
+                                         "\") "
+                                         (:org-export-command (config/config))
+                                         ")")
+                 (:emacs-config (config/config))]
+        out (println command)
+        content (delay (:out (apply sh/sh command)))]
+    [metadata content]))
 
-; We really need to parse each file once. So we memoize the results
+;; We really need to parse each file once. So we memoize the results
 (def read-org
   (memoize slow-read-org))
-
 
 (defn- read-clj [file]
   (let [[metadata & content] (read-string
                               (str \( (slurp file :encoding (:encoding (config/config))) \)))
         evalcontent (binding [*ns* (the-ns 'static.core)]
-                       (eval (last content)))]
+                      (eval (last content)))]
     [metadata evalcontent]))
 
 (defn- read-cssgen [file]
@@ -174,9 +173,7 @@
               ]
              :default
              [:html
-              (string-template/load-template (dir-path :templates) template)])))
-   )
-  )
+              (string-template/load-template (dir-path :templates) template)])))))
 
 (defn write-out-dir [file str]
   (FileUtils/writeStringToFile
