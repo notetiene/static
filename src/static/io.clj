@@ -4,7 +4,6 @@
             [cssgen :as cssgen]
             [hiccup.core :refer :all]
             [stringtemplate-clj.core :as string-template]
-            [clojure.pprint :refer :all]
             [static.config :as config])
   (:import (org.pegdown PegDownProcessor)
            (java.io File)
@@ -57,7 +56,6 @@
                                                  (last (re-find #"\d" footnote)) 
                                                  )))]
                             ) [[] markdown] fos)]
-          ;(clojure.pprint/pprint md1)
           ;(System/exit 0)
           md1
           )
