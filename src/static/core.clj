@@ -153,9 +153,9 @@
                 (filter #(> (count %) 0)
                         (if (string? tags) (str/split tags #" " ) tags)))
         page-tags (tagfn (str (:tags m) " " (:keywords m)))
-        site-tags (tagfn (:site-default-keywords (static.config/config)))
+        site-tags (tagfn (:site-default-keywords (config/config)))
         merge-tags (vec (sort (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags))))
-        tagstring (clojure.string/join ", " merge-tags)
+        tagstring (str/join ", " merge-tags)
         ;; we also need the complete list of posts with their tags
         files (io/list-files :posts)
         posts (map #(-> (io/read-doc %)
@@ -169,12 +169,13 @@
          ]
     ; update with default-values for non-existing
     ; keywords are the combination of the site keywords and the site/post specific keywords
-    (assoc (merge {:author (:site-author (static.config/config))
-                   :site-title (:site-title (static.config/config))
-                   :categories (tag-sidebar-list)
-                   :postlist posts
-                   :projects (project-sidebar-list)} m)
-      :tags tagstring)))
+    (merge {:author (:site-author (config/config))
+            :site-title (:site-title (config/config))
+            :categories (tag-sidebar-list)
+            :postlist posts
+            :projects (project-sidebar-list)}
+           m
+           {:tags tagstring})))
 
 (def ^:dynamic metadata nil)
 (def ^:dynamic content nil)
@@ -183,7 +184,7 @@
   (let [[m c] page
         template (if (:template m)
                    (:template m)
-                   (:default-template (static.config/config)))
+                   (:default-template (config/config)))
         [type template-string] (if (= template :none)
                                  [:none c]
                                  (io/read-template template))]
@@ -480,7 +481,7 @@
   []
   (binding [*ns* (the-ns 'static.core)]
     (let [filepath (str (io/dir-path :templates)
-                        (:base-template (static.config/config)))]
+                        (:base-template (config/config)))]
       (println filepath)
       (try
         (load-file filepath)
