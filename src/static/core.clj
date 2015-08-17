@@ -4,6 +4,7 @@
             ;;[hiccup-bridge.core :as hic]
             [clojure.walk :as walk]
             [net.cgrand.enlive-html :as enlive]
+            [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.tools.cli :as cli]
             [clojure.java.browse :as browse]
@@ -118,6 +119,13 @@
      :id (hash url)
      :tags (:tags metadata)}))
 
+(defn tags-meta [metadata]
+  (if (:tags metadata)
+    (for [tag (str/split (:tags metadata) #",? ")]
+      {:title tag :url (url-for-tag tag)})
+    (do (log/warn "Nil tags... Returning empty tag list.")
+        [])))
+
 (defn create-post-meta
   "creates a dictionary with information for a content item / post"
   [f]
@@ -143,7 +151,7 @@
   ; this is certainly more complex than it should be. so much still to learn..
   (let [tagfn (fn [tags]
                 (filter #(> (count %) 0)
-                        (if (string? tags) (clojure.string/split tags #" " ) tags)))
+                        (if (string? tags) (str/split tags #" " ) tags)))
         page-tags (tagfn (str (:tags m) " " (:keywords m)))
         site-tags (tagfn (:site-default-keywords (static.config/config)))
         merge-tags (vec (sort (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags))))
@@ -376,7 +384,7 @@
   []
   (let [files (map #(create-post-meta %) (io/list-files :posts))
         sorted (reverse (sort-by :javadate files))
-        annotated (map (fn [d] (let [[_ year month & rest] (clojure.string/split (:url d) #"/")]
+        annotated (map (fn [d] (let [[_ year month & rest] (str/split (:url d) #"/")]
                                  (assoc d :year year :month month))) sorted)
         grouped (reverse (vec (into (sorted-map) (group-by :year annotated))))
         meta (enhance-metadata {:title (:archives-title (config/config))
