@@ -1,26 +1,23 @@
 (ns static.core
-  (:gen-class)
-  (:require [watchtower.core :as watcher]
-            ;;[hiccup-bridge.core :as hic]
-            [clojure.walk :as walk]
-            [net.cgrand.enlive-html :as enlive]
+  (:require [clojure.java.browse :as browse]
             [clojure.string :as str]
-            [clojure.tools.logging :as log]
             [clojure.tools.cli :as cli]
-            [clojure.java.browse :as browse]
-            [ring.adapter.jetty :as jetty]
-            ;;[ring.middleware.file :refer :all]
-            [ring.util.response :refer :all]
+            [clojure.tools.logging :as log]
+            [hiccup.core :as hiccup]
             [hiccup.page :refer :all]
             [hiccup.util :refer :all]
-            [hiccup.core :as hiccup]
-            [stringtemplate-clj.core :as string-template]
+            [net.cgrand.enlive-html :as enlive]
+            [ring.adapter.jetty :as jetty]
+            [ring.util.response :refer :all]
             [static.config :as config]
-            [static.io :as io])
+            [static.io :as io]
+            [stringtemplate-clj.core :as string-template]
+            [watchtower.core :as watcher])
   (:import (java.io File)
            (java.net URL)
-           (org.apache.commons.io FileUtils FilenameUtils)
-           (java.text SimpleDateFormat)))
+           (java.text SimpleDateFormat)
+           (org.apache.commons.io FileUtils FilenameUtils))
+  (:gen-class))
 
 (defmacro define-template
   "wrap a template in the necessary calls to return correctly"

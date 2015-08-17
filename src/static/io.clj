@@ -1,14 +1,12 @@
 (ns static.io
-  (:require [clojure.tools.logging :as log]
-            [clojure.java.shell :as sh]
-            [cssgen :as cssgen]
-            [hiccup.core :refer :all]
-            [stringtemplate-clj.core :as string-template]
-            [static.config :as config])
-  (:import (org.pegdown PegDownProcessor)
-           (java.io File)
-           (java.io InputStreamReader OutputStreamWriter)
-           (org.apache.commons.io FileUtils FilenameUtils)))
+  (:require [clojure.java.shell :as sh]
+            [clojure.tools.logging :as log]
+            [cssgen :as css-gen]
+            [static.config :as config]
+            [stringtemplate-clj.core :as string-template])
+  (:import (java.io File)
+           (org.apache.commons.io FileUtils FilenameUtils)
+           (org.pegdown PegDownProcessor)))
 
 (defn- split-file [content]
   (let [idx (.indexOf content "---" 4)]
@@ -114,7 +112,7 @@
   (let [metadata {:extension "css" :template :none}
         content (read-string
                  (slurp file :encoding (:encoding (config/config))))
-        to-css  #(clojure.string/join "\n" (doall (map cssgen/css %)))]
+        to-css  #(clojure.string/join "\n" (doall (map css-gen/css %)))]
     [metadata (delay (binding [*ns* (the-ns 'static.core)] (-> content eval to-css)))]))
 
 (defn read-doc [f]
