@@ -146,7 +146,7 @@
                         (if (string? tags) (clojure.string/split tags #" " ) tags)))
         page-tags (tagfn (str (:tags m) " " (:keywords m)))
         site-tags (tagfn (:site-default-keywords (static.config/config)))
-        merge-tags (vec (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags )))
+        merge-tags (vec (sort (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags))))
         tagstring (clojure.string/join ", " merge-tags)
         ;; we also need the complete list of posts with their tags
         files (list-files :posts)
