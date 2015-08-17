@@ -159,18 +159,25 @@
                                            "org"
                                            "html"]) true))) [] )))
 
+(defn template-file [template-name]
+  (let [full-path (str (dir-path :templates) template-name)
+        file (File. full-path)]
+    (when (not (.exists file))
+      (log/warn "Template does not exist: " full-path))
+    file))
+
 (def read-template
   (memoize
    (fn [template]
      (let [extension (FilenameUtils/getExtension (str template))]
        (cond (= extension "clj")
              [:clj
-                (let [thecontent (-> (str (dir-path :templates) template)
-                  (File.)
-                  (#(str \( (slurp % :encoding (:encoding (config/config))) \) )))]
-                  (read-string thecontent)
-                  )
-              ]
+              (-> (template-file template)
+                  (#(str \(
+                         (slurp % :encoding (:encoding (config/config)))
+                         \)
+                         ))
+                  read-string)]
              :default
              [:html
               (string-template/load-template (dir-path :templates) template)])))))
