@@ -141,6 +141,8 @@
      :keyword-keywords (:keyword-keywords metadata)
      :keyword-tags (:keyword-tags metadata)}))
 
+(def ^:dynamic watch-mode nil)
+
 (defn enhance-metadata
   "enhance the given metadata with additional information
    so that we don't have to compute this in the template"
@@ -169,6 +171,7 @@
     (merge {:author (:site-author (config/config))
             :site-title (:site-title (config/config))
             :categories (tag-sidebar-list)
+            :watching watch-mode
             :postlist posts
             :projects (project-sidebar-list)}
            m
@@ -488,9 +491,12 @@
 (defn create
   "Build Site."
   []
-  (doto (File. (:out-dir (config/config)))
-    (FileUtils/deleteDirectory)
-    (.mkdir))
+  ;; During watching, we don't delete everything, as that'll make any change
+  ;; detection libs come up with a 404. So, it's best to do a final 'create' before deployment
+  (when (nil? watch-mode)
+    (doto (File. (:out-dir (config/config)))
+      (FileUtils/deleteDirectory)
+      (.mkdir)))
 
   ;; make sure the memoziation returns new values
   (io/memo-increase)
@@ -545,7 +551,11 @@
                     (fn [_]
                       (log/info "Rebuilding site...")
                       (try
-                        (create)
+
+                        ;; bind the 'watching' metdata
+                        (binding [watch-mode true]
+                          (create))
+
                         (catch Exception e
                           (log/error e "Exception thrown while building site!")))))))
 

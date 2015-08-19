@@ -216,7 +216,7 @@ config.clj.
 ### Testing the site
 
 You can test the site locally using jetty, which will launch on <http://localhost:8080>. 
-The site will rebuild if you change any of the source files.
+The site will rebuild if you change any of the source files. Watching will not delete content, only update. So in order to have a proper, clean deployment, you should always do a '--build' before deployment when watching was used during development.
 
     java -jar static-app.jar --watch
 
@@ -346,6 +346,8 @@ The Metadata is a list of template metadata which has the following attributes:
 -   title: The title of the current document / post (if there is on
 
 -   type: Is :post for a post and :site for a document
+
+-   watching: If static is run in watch mode, then this is set to true, otherwise nil. I'm using this to embed the very useful 'http://livejs.com/' live.js into the template during watch / development mode.
 
 ### Content
 
