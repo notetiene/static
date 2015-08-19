@@ -8,6 +8,14 @@
            (org.apache.commons.io FileUtils FilenameUtils)
            (org.pegdown PegDownProcessor)))
 
+;; In order to support memoziation and also support the 'watch' parameter
+;; We add an atom with a parameter that is increased whenever a new watch build
+;; starts
+
+(def memo-param (atom 0))
+(defn memo-increase []
+  (swap! memo-param inc))
+
 (defn- split-file [content]
   (let [idx (.indexOf content "---" 4)]
     [(.substring content 4 idx) (.substring content (+ 3 idx))]))
@@ -77,7 +85,7 @@
     [(prepare-metadata metadata) (delay content)]))
 
 (defn- slow-read-org
-  [file]
+  [file & _]
   (if (not (:emacs (config/config)))
     (do (log/error "Path to Emacs is required for org files.")
         (System/exit 0)))
@@ -120,7 +128,7 @@
     (cond (or (= extension "markdown") (= extension "md"))
           (read-markdown f)
           (= extension "md") (read-markdown f)
-          (= extension "org") (read-org f)
+          (= extension "org") (read-org f @memo-param)
           (= extension "html") (read-html f)
           (= extension "clj") (read-clj f)
           (= extension "cssgen") (read-cssgen f)
@@ -166,7 +174,7 @@
 
 (def read-template
   (memoize
-   (fn [template]
+   (fn [template & _]
      (let [extension (FilenameUtils/getExtension (str template))]
        (cond (= extension "clj")
              [:clj

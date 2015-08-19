@@ -184,7 +184,7 @@
                    (:default-template (config/config)))
         [type template-string] (if (= template :none)
                                  [:none c]
-                                 (io/read-template template))]
+                                 (io/read-template template @io/memo-param))]
     (cond (or (= type :clj)
               (= type :none))
           (binding [*ns* (the-ns 'static.core)
@@ -491,6 +491,9 @@
   (doto (File. (:out-dir (config/config)))
     (FileUtils/deleteDirectory)
     (.mkdir))
+
+  ;; make sure the memoziation returns new values
+  (io/memo-increase)
 
   ; Import the template helpers
   (load-base-template)
