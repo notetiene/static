@@ -1,5 +1,5 @@
 (ns static.config
-  (:use [clojure.tools logging])
+  (:require [clojure.tools.logging :as log])
   (:import (java.io File)))
 
 
@@ -32,8 +32,7 @@
                                       (org-no-properties
                                        (with-current-buffer
                                          (org-html-export-as-html nil nil nil t nil)
-                                         (buffer-string))))
-                }]
+                                         (buffer-string))))}]
   
   (def config
     (memoize
@@ -42,13 +41,12 @@
           ;;if emacs key is set make sure executable exists.
           (when (:emacs config)
             (if (not (.exists (File. (:emacs config))))
-              (do (error "Path to Emacs not valid.")
+              (do (log/error "Path to Emacs not valid.")
                   (System/exit 0))))
           (merge defaults config))
         (catch Exception e (do 
-                             (info "Configuration not found using defaults.")
+                             (log/info "Configuration not found using defaults.")
                              defaults))))))
 
 (defn set!-config [k v]
   (alter-var-root (find-var 'static.config/config) (fn [c] #(identity (assoc (c) k v)))))
-  
