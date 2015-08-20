@@ -349,6 +349,8 @@ The Metadata is a list of template metadata which has the following attributes:
 
 -   watching: If static is run in watch mode, then this is set to true, otherwise nil. I'm using this to embed the very useful 'http://livejs.com/' live.js into the template during watch / development mode.
 
+-   blog-index: If blog-as-index is true (in the config) and when the main /index.html is being rendered, this will be set to true, so that the template can adopt the look of the index (say only displaying parts of the post, etc)
+
 ### Content
 
 The content structure differs based on list templates and non list templates. For the normal templates it is simple a vector of post dictionaries (see below). For list templates, it is a vector of lists, and each list has two member, the first is the title / headline for the current list group (i.e. January, February for the archive or #tag1 #tag2 for the tags) and the second is a vector of posts that belong to this list group:

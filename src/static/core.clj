@@ -141,7 +141,10 @@
      :keyword-keywords (:keyword-keywords metadata)
      :keyword-tags (:keyword-tags metadata)}))
 
-(def ^:dynamic watch-mode nil)
+;; These vars are included in the template metadata when specific build
+;; modes are active
+(def ^:dynamic watch-mode nil) ; is being run in watch mode
+(def ^:dynamic blog-index nil) ; rendering the blog index
 
 (defn enhance-metadata
   "enhance the given metadata with additional information
@@ -172,6 +175,7 @@
             :site-title (:site-title (config/config))
             :categories (tag-sidebar-list)
             :watching watch-mode
+            :blog-index blog-index
             :postlist posts
             :projects (project-sidebar-list)}
            m
@@ -521,7 +525,8 @@
     (when (:blog-as-index (config/config))
       ;; Create the latest-post archives, i.e. create a index.html with n posts
       ;; under latest-posts/ and link them together
-      (log-time-elapsed "Creating Latest Posts " (create-latest-posts))
+      (binding [blog-index true]
+        (log-time-elapsed "Creating Latest Posts " (create-latest-posts)))
 
       ;; copy the very last index.html over to / as the current index
       (let [max (apply max (map read-string (-> (:out-dir (config/config))
