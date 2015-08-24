@@ -232,12 +232,14 @@
         limit (:rss-description-char-limit (config/config))
         description (if (and (> limit 0) (> (count @content) limit))
                       (str (subs @content 0 limit) "… ")
-                      @content)]
+                      @content)
+         description (if (:summary metadata) (:summary metadata) (escape-html description))
+         ]
     [:item
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config/config))) (post-url file)))]
      [:pubDate (date-from-file file (:date-format-rss (config/config)))]
-     [:description (escape-html description)]]))
+     [:description description]]))
 
 (defn create-rss
   "Create RSS feed."

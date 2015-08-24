@@ -147,6 +147,7 @@ Static is a Static Site Generator written in Clojure. This is a fork of the orig
     #+BEGIN_EXAMPLE
       ,#+title: Blogging Like a Hacker
       ,#+tags: clojure
+      ,#+summary: Summary of this post (is used in RSS feeds instead of the HTML if set)
     #+END_EXAMPLE
 
 **** Markdown
