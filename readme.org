@@ -324,6 +324,7 @@ Posts are Maps with the following attributes:
 - footnotes: If you're using Markdown and defining footnotes, they'll be made available in here.
 - date: A string with the date when this post was created
 - javadate: A java date object in case you want to perform date manipulations
+- filename: The original filename of the rendered post, without the folder path (i.e."2015-12-12-jay.md")
 - keywords: A string, the list of keywords of this post "a b c"
 - keyword-keywords: The keywords of this post as a vector of keywords [:a :b :c]
 

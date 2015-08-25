@@ -132,6 +132,7 @@
     {:title (:title metadata)
      :content @content
      :url url
+     :filename (FilenameUtils/getName (str f))
      :date date
      :javadate (javadate-from-file f)
      :footnotes (:footnotes metadata)
