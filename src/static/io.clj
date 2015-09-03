@@ -33,6 +33,15 @@
                 h)))
           {} (re-seq #"([^:#\+]+): (.+)(\n|$)" metadata)))
 
+(defn- prepare-content-metadata [metadata]
+  (reduce (fn [h [_ k v]]
+            (let [key (keyword (.toLowerCase k))]
+              (if (not (h key))
+                (assoc h key v)
+                h)))
+    {} (re-seq #"([^:#\+]+): (.+) (\-\-\>)" metadata))
+  )
+
 (defn- parse-markdown-footnotes [markdown]
   "Since pegdown has no footnotes-support, we will just do
    some replacement on the markdown itself in order to
@@ -98,12 +107,16 @@
                                          " (find-file \""
                                          (.getAbsolutePath file)
                                          "\") "
+                                         ;; let the user run additional code from his config after a file has been loaded
+                                         (when-let [g (:emacs-custom-setup (config/config))] g)
                                          (:org-export-command (config/config))
                                          ")")
                  (:emacs-config (config/config))]
-        out (println command)
-        content (delay (:out (apply sh/sh command)))]
-    [metadata content]))
+         out (println command)
+         content (delay (:out (apply sh/sh command)))
+         content-meta (prepare-content-metadata @content)
+         ]
+    [(merge content-meta metadata) content]))
 
 ;; We really need to parse each file once. So we memoize the results
 (def read-org

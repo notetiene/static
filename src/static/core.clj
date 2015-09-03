@@ -234,7 +234,8 @@
         description (if (and (> limit 0) (> (count @content) limit))
                       (str (subs @content 0 limit) "… ")
                       @content)
-         description (if (:summary metadata) (:summary metadata) (escape-html description))
+         description (if (:summary metadata) (:summary metadata) (if (:description metadata) (:description metadata)
+                                                                   (escape-html description)))
          ]
     [:item
      [:title (escape-html (:title metadata))]
