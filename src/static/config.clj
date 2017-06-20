@@ -2,6 +2,10 @@
   (:require [clojure.tools.logging :as log])
   (:import (java.io File)))
 
+(def emacs-executable
+  "Emacs executable path."
+  ^:private
+  (clojure.string/trim (:out (clojure.java.shell/sh "which" "emacs"))))
 
 (let [defaults {:site-title "A Static Blog"
                 :site-title-page " - Page %s" ; The extension for older pages
@@ -26,7 +30,7 @@
                 :date-format-rss "E, d MMM yyyy HH:mm:ss Z" ; the date format for the rss feed
                 :date-format-archive "MMMM yyyy" ; the output dateformat for archive links
                 :rss-description-char-limit 120 ; if this is 0, include all content in the rss, otherwise limtit to the given amount of chars
-                :emacs "/usr/bin/emacs"
+                :emacs emacs-executable
                 :emacs-config " -q "
                 :org-export-command '(princ
                                       (org-no-properties

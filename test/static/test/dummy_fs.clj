@@ -1,6 +1,12 @@
 (ns static.test.dummy-fs
   (:import (java.io File)))
 
+
+(def emacs-executable
+  "Emacs executable path."
+  ^:private
+  (clojure.string/trim (:out (clojure.java.shell/sh "which" "emacs"))))
+
 (defn- create-resources []
   (.mkdir (File. "resources/"))
   (.mkdir (File. "resources/site/"))
@@ -172,9 +178,8 @@ org alias test"))
   (spit (File. "resources/public/dummy.static") "Hello, World!!"))
 
 (defn- create-config []
-  (spit (File. "config.clj") 
-	"
-[:site-title \"Dummy Site\"
+  (spit (File. "config.clj")
+        (format "[:site-title \"Dummy Site\"
  :site-description \"Dummy Description\"
  :site-url \"http://www.dummy.com\"
  :in-dir \"resources/\"
@@ -184,7 +189,7 @@ org alias test"))
  :encoding \"UTF-8\"
  :posts-per-page 2
  :blog-as-index true
- :emacs \"/usr/bin/emacs\"]"))
+ :emacs \"%s\"]" emacs-executable)))
 
 (defn create-dummy-fs []
   (create-resources)
