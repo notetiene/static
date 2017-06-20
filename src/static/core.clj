@@ -37,11 +37,11 @@ modify the html with all the css and images in place."
 (defn setup-logging []
   (let [logger (java.util.logging.Logger/getLogger "")]
     (doseq [handler (.getHandlers logger)]
-      (. handler setFormatter
-         (proxy [java.util.logging.Formatter] []
-           (format
-             [record]
-             (str "[+] " (.getLevel record) ": " (.getMessage record) "\n")))))))
+      (.setFormatter handler
+                     (proxy [java.util.logging.Formatter] []
+                       (format
+                         [record]
+                         (str "[+] " (.getLevel record) ": " (.getMessage record) "\n")))))))
 
 (defmacro log-time-elapsed
   "Evaluates expr and logs the time it took.  Returns the value of
@@ -78,7 +78,7 @@ expr."
   "Given a post file return its URL."
   [file]
   (let [name (FilenameUtils/getBaseName (str file))]
-    (str (apply str (interleave (repeat \/) (.split name "-" 4))) "/")))
+    (str (str/join (interleave (repeat \/) (.split name "-" 4))) "/")))
 
 (defn site-url [f & [ext]]
   (-> (str f)
@@ -96,7 +96,7 @@ expr."
 url projects that have the option 'published:no' set will be
 ignored"
   []
-  (filter #(< 0 (count %))
+  (filter #(pos? (count %))
           (map (fn [f]
                  (let [[metadata content] (io/read-doc f)
                        url (site-url f (:extension metadata))]
@@ -160,11 +160,13 @@ don’t have to compute this in the template."
   ;; This is certainly more complex than it should be. so much still
   ;; to learn.
   (let [tagfn (fn [tags]
-                (filter #(> (count %) 0)
+                (filter #(pos? (count %))
                         (if (string? tags) (str/split tags #" " ) tags)))
         page-tags (tagfn (str (:tags m) " " (:keywords m)))
         site-tags (tagfn (:site-default-keywords (config/config)))
-        merge-tags (vec (sort (into #{} (if (> (count page-tags) 0) (apply conj site-tags page-tags) site-tags))))
+        merge-tags (vec (sort (set (if (pos? (count page-tags))
+                                     (apply conj site-tags page-tags)
+                                     site-tags))))
         tagstring (str/join ", " merge-tags)
         ;; we also need the complete list of posts with their tags
         files (io/list-files :posts)
@@ -196,9 +198,8 @@ don’t have to compute this in the template."
 
 (defn template [page]
   (let [[m c] page
-        template (if (:template m)
-                   (:template m)
-                   (:default-template (config/config)))
+        template (or (:template m)
+                     (:default-template (config/config)))
         [type template-string] (if (= template :none)
                                  [:none c]
                                  (io/read-template template @io/memo-param))]
@@ -208,9 +209,7 @@ don’t have to compute this in the template."
                     metadata m content c]
             (hiccup/html (map #(eval %) template-string)))
           (= type :html)
-          (let [m (->> m
-                       (reduce (fn[h [k v]]
-                                 (assoc h (name k) v)) {}))]
+          (let [m (reduce (fn [h [k v]] (assoc h (name k) v)) {} m)]
             (string-template/render-template template-string
                                              (merge m {"content" c}))))))
 
@@ -240,12 +239,11 @@ don’t have to compute this in the template."
   [file]
   (let [[metadata content] (io/read-doc file)
         limit (:rss-description-char-limit (config/config))
-        description (if (and (> limit 0) (> (count @content) limit))
+        description (if (and (pos? limit) (> (count @content) limit))
                       (str (subs @content 0 limit) "… ")
                       @content)
-        description (if (:summary metadata) (:summary metadata) (if (:description metadata) (:description metadata)
-                                                                    (escape-html description)))
-        ]
+        description (or (:summary metadata)
+                        (or (:description metadata) (escape-html description)))]
     [:item
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config/config))) (post-url file)))]
@@ -301,7 +299,7 @@ don’t have to compute this in the template."
           (let [[tag info] p]
             (if (nil? (m tag))
               (assoc m tag [info])
-              (assoc m tag (conj (m tag) info)))))
+              (update-in m [tag] conj info))))
         h (partition 2 (interleave tags (repeat info))))))
    (sorted-map)
    (filter #(not (nil? (:tags (first (io/read-doc %))))) (io/list-files :posts))))
@@ -348,12 +346,12 @@ entries."
   "Return previous, next navigation links."
   [page max-index posts-per-page]
   (let [count-total (count (io/list-files :posts))
-        older (str "/latest-posts/" (- page 1) "/")
-        newer (str "/latest-posts/" (+ page 1) "/")]
+        older (str "/latest-posts/" (dec page) "/")
+        newer (str "/latest-posts/" (inc page) "/")]
     (cond
       (< count-total posts-per-page) nil
       (= page max-index) {:older older}
-      (= page 0) {:newer newer}
+      (zero? page) {:newer newer}
       :default {:newer newer :older older})))
 
 (defn create-latest-posts
@@ -370,7 +368,7 @@ entries."
       (let [pager-data (pager page max-index posts-per-page)
             ;; Don’t add page extension for first page / index:
             title-extension (if (< page max-index)
-                              (format (:site-title-page (config/config)) (+ page 1))
+                              (format (:site-title-page (config/config)) (inc page))
                               "")
             ;; Create metadata for page.
             metadata {:title (str (:site-title (config/config)) title-extension)
@@ -398,7 +396,7 @@ entries."
                                       (FilenameUtils/getBaseName (str v)))]
                    (if (nil? (h date))
                      (assoc h date 1)
-                     (assoc h date (+ 1 (h date)))))) {})
+                     (update-in h [date] inc)))) {})
        (sort-by first)
        reverse))
 
@@ -496,7 +494,7 @@ Write a page for each month and a page listing all months."
       ;; we ignore files in public that start with _ as these are html
       ;; templates
       (if (.isFile f)
-        (when (not (= \_ (first (FilenameUtils/getBaseName (str f)))))
+        (when-not (= \_ (first (FilenameUtils/getBaseName (str f))))
           (FileUtils/copyFileToDirectory f out-dir))
         (FileUtils/copyDirectoryToDirectory f out-dir))
       )))
@@ -632,3 +630,5 @@ Write a page for each month and a page listing all months."
 
     (when-not watch
       (shutdown-agents))))
+
+;; core.clj<static> ends here

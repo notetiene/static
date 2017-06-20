@@ -1,6 +1,7 @@
 (ns static.io
   (:require [clojure.java.shell :as sh]
             [clojure.tools.logging :as log]
+            [clojure.string :as str]
             [cssgen :as css-gen]
             [static.config :as config]
             [stringtemplate-clj.core :as string-template])
@@ -23,12 +24,12 @@
 (defn- prepare-metadata [metadata]
   (reduce (fn [h [_ k v]]
             (let [key (keyword (.toLowerCase k))
-                   ;; Create a list of keyword tags.
-                   h (case key
-                       :tags (assoc h :keyword-tags (map keyword (clojure.string/split v #" ")))
-                       :keywords (assoc h :keyword-keywords (map keyword (clojure.string/split v #" ")))
-                       h)]
-              (if (not (h key))
+                  ;; Create a list of keyword tags.
+                  h (case key
+                      :tags (assoc h :keyword-tags (map keyword (str/split v #" ")))
+                      :keywords (assoc h :keyword-keywords (map keyword (str/split v #" ")))
+                      h)]
+              (if-not (h key)
                 (assoc h key v)
                 h)))
           {} (re-seq #"([^:#\+]+): (.+)(\n|$)" metadata)))
@@ -36,11 +37,10 @@
 (defn- prepare-content-metadata [metadata]
   (reduce (fn [h [_ k v]]
             (let [key (keyword (.toLowerCase k))]
-              (if (not (h key))
+              (if-not (h key)
                 (assoc h key v)
                 h)))
-    {} (re-seq #"([^:#\+]+): (.+) (\-\-\>)" metadata))
-  )
+          {} (re-seq #"([^:#\+]+): (.+) (\-\-\>)" metadata)))
 
 (defn- parse-markdown-footnotes
   "Since pegdown has no footnotes-support, we will just do some
@@ -56,7 +56,7 @@ welcome :)"
     (if (> (count fos) 0)
       ;; Create the footnotes.
       (let [md1 (reduce (fn [[results markdown] footnote]
-                          [(conj results {:text (last (clojure.string/split footnote #":" 2))
+                          [(conj results {:text (last (str/split footnote #":" 2))
                                           :ref (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
                                           :id (str "#fn" (last (re-find #"\d" footnote)))})
                            (-> markdown
@@ -102,11 +102,11 @@ welcome :)"
     (do (log/error "Path to Emacs is required for org files.")
         (System/exit 0)))
   (let [metadata (prepare-metadata
-                  (apply str
-                         (take 500 (slurp file :encoding (:encoding (config/config))))))
+                  (str/join
+                   (take 500 (slurp file :encoding (:encoding (config/config))))))
         command [(:emacs (config/config))
                  "--batch" "--eval" (str "(progn "
-                                         (apply str (map second (:emacs-eval (config/config))))
+                                         (str/join (map second (:emacs-eval (config/config))))
                                          " (find-file \""
                                          (.getAbsolutePath file)
                                          "\") "
@@ -118,10 +118,10 @@ welcome :)"
                                          (:org-export-command (config/config))
                                          ")")
                  (:emacs-config (config/config))]
-         out (println command)
-         content (delay (:out (apply sh/sh command)))
-         content-meta (prepare-content-metadata @content)
-         ]
+        out (println command)
+        content (delay (:out (apply sh/sh command)))
+        content-meta (prepare-content-metadata @content)
+        ]
     [(merge content-meta metadata) content]))
 
 ;; We really need to parse each file once. So we memoize the results.
@@ -139,7 +139,7 @@ welcome :)"
   (let [metadata {:extension "css" :template :none}
         content (read-string
                  (slurp file :encoding (:encoding (config/config))))
-        to-css  #(clojure.string/join "\n" (doall (map css-gen/css %)))]
+        to-css  #(str/join "\n" (doall (map css-gen/css %)))]
     [metadata (delay (binding [*ns* (the-ns 'static.core)] (-> content eval to-css)))]))
 
 (defn read-doc [f]
@@ -161,13 +161,11 @@ welcome :)"
         :default (throw (Exception. "Unknown Directory."))))
 
 (defn- active-post? [[filename [metadata content]]]
-  (if (:inactive metadata)
-    nil
-    true))
+  (when-not (:inactive metadata) true))
 
 (defn- filter-inactive-posts [posts]
   (let [meta (pmap read-doc posts)
-        comb (into [] (zipmap posts meta))
+        comb (vec (zipmap posts meta))
         filtered (filter active-post? comb)
         posts (map first filtered)]
     posts))
@@ -177,17 +175,17 @@ welcome :)"
     (if (.isDirectory d)
       (sort
        (filter-inactive-posts
-       (FileUtils/listFiles d (into-array ["markdown"
-                                           "md"
-                                           "clj"
-                                           "cssgen"
-                                           "org"
-                                           "html"]) true))) [] )))
+        (FileUtils/listFiles d (into-array ["markdown"
+                                            "md"
+                                            "clj"
+                                            "cssgen"
+                                            "org"
+                                            "html"]) true))) [])))
 
 (defn template-file [template-name]
   (let [full-path (str (dir-path :templates) template-name)
         file (File. full-path)]
-    (when (not (.exists file))
+    (when-not (.exists file)
       (log/warn "Template does not exist: " full-path))
     file))
 
@@ -215,3 +213,5 @@ welcome :)"
   (let [cmd [rsync "-avz" "--delete" "--checksum" "-e" "ssh"
              out-dir (str user "@" host ":" deploy-dir)]]
     (log/info (:out (apply sh/sh cmd)))))
+
+;; io.clj<static> ends here

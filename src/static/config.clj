@@ -52,9 +52,9 @@
         (let [config (apply hash-map (read-string (slurp (File. "config.clj"))))]
           ;; If emacs key is set make sure executable exists.
           (when (:emacs config)
-            (if (not (.exists (File. (:emacs config))))
-              (do (log/error "Path to Emacs not valid.")
-                  (System/exit 0))))
+            (when-not (.exists (File. (:emacs config)))
+              (log/error "Path to Emacs not valid.")
+              (System/exit 0)))
           (merge defaults config))
         (catch Exception e (do
                              (log/info "Configuration not found using defaults.")
@@ -62,3 +62,5 @@
 
 (defn set!-config [k v]
   (alter-var-root (find-var 'static.config/config) (fn [c] #(identity (assoc (c) k v)))))
+
+;; config.clj<static> ends here
