@@ -20,7 +20,7 @@
   (:gen-class))
 
 (defmacro define-template
-  "wrap a template in the necessary calls to return correctly"
+  "Wrap a template in the necessary calls to return correctly."
   [template-file & body]
   `((fn []
       ((enlive/template ~template-file [~'metadata ~'content]
@@ -29,8 +29,8 @@
 
 (defn template-path
   "Return a template file descriptor for the html template name
-   they're in public, so that one can just start a webserver there
-   and modify the html with all the css and images in place"
+they're in public, so that one can just start a webserver there and
+modify the html with all the css and images in place."
   [name]
   (File. (str (io/dir-path :public) name)))
 
@@ -44,7 +44,8 @@
              (str "[+] " (.getLevel record) ": " (.getMessage record) "\n")))))))
 
 (defmacro log-time-elapsed
-  "Evaluates expr and logs the time it took.  Returns the value of expr."
+  "Evaluates expr and logs the time it took.  Returns the value of
+expr."
   {:added "1.0"}
   [msg & expr]
   `(let [start# (. System (currentTimeMillis))
@@ -60,13 +61,13 @@
   (.format (SimpleDateFormat. out) (.parse (SimpleDateFormat. in) date)))
 
 (defn javadate-from-file
-  "Returns an actual boxed date object for time calculations"
+  "Returns an actual boxed date object for time calculations."
   [file]
   (.parse (SimpleDateFormat. "yyyy-MM-dd")
           (re-find #"\d*-\d*-\d*" (FilenameUtils/getBaseName (str file)))))
 
 (defn date-from-file
-  "parse a date from the url of the file"
+  "Parse a date from the url of the file."
   [file dateformat]
   (parse-date "yyyy-MM-dd" dateformat
               (re-find #"\d*-\d*-\d*"
@@ -91,8 +92,9 @@
   (str "/tags/" tag "/index.html"))
 
 (defn project-sidebar-list
-  "gives a list of all projects in the sidebar, with their respective url
-  projects that have the option 'published:no' set will be ignored"
+  "Give a list of all projects in the sidebar, with their respective
+url projects that have the option 'published:no' set will be
+ignored"
   []
   (filter #(< 0 (count %))
           (map (fn [f]
@@ -105,7 +107,7 @@
                (io/list-files :site))))
 
 (defn create-site-meta
-  "creates the same structure as post-meta, but for sites"
+  "Create the same structure as post-meta, but for sites."
   [metadata content]
   (let [url (:url metadata)]
     {:title (:title metadata)
@@ -124,7 +126,7 @@
         [])))
 
 (defn create-post-meta
-  "creates a dictionary with information for a content item / post"
+  "Create a dictionary with information for a content item / post."
   [f]
   (let [url (post-url f)
         [metadata content] (static.io/read-doc f)
@@ -143,16 +145,20 @@
      :keyword-keywords (:keyword-keywords metadata)
      :keyword-tags (:keyword-tags metadata)}))
 
-;; These vars are included in the template metadata when specific build
-;; modes are active
-(def ^:dynamic watch-mode nil) ; is being run in watch mode
-(def ^:dynamic blog-index nil) ; rendering the blog index
+;; These vars are included in the template metadata when specific
+;; build modes are active.
+
+;; Is being run in watch mode.
+(def ^:dynamic watch-mode nil)
+;; Rendering the blog index.
+(def ^:dynamic blog-index nil)
 
 (defn enhance-metadata
-  "enhance the given metadata with additional information
-   so that we don't have to compute this in the template"
+  "Enhance the given metadata with additional information so that we
+don’t have to compute this in the template."
   [m]
-  ; this is certainly more complex than it should be. so much still to learn..
+  ;; This is certainly more complex than it should be. so much still
+  ;; to learn.
   (let [tagfn (fn [tags]
                 (filter #(> (count %) 0)
                         (if (string? tags) (str/split tags #" " ) tags)))
@@ -167,12 +173,14 @@
                         (assoc :url (post-url %))
                         (assoc :date (date-from-file % (:date-format-post (config/config))))
                         (select-keys [:title :url :tags :keyword-tags :date :keywords :keyword-keywords]))
-                 files)
-        ;posts (map (fn [f] (assoc (first (read-doc f)) :url (post-url f))) files)
-        ;posts (map #(select-keys % [:title :url :tags :date]) posts)
-         ]
-    ; update with default-values for non-existing
-    ; keywords are the combination of the site keywords and the site/post specific keywords
+                   files)
+        ;; posts (map (fn [f] (assoc (first (read-doc f)) :url (post-url f))) files)
+        ;; posts (map #(select-keys % [:title :url :tags :date]) posts)
+        ]
+
+    ;; Update with default-values for non-existing keywords are the
+    ;; combination of the site keywords and the site/post specific
+    ;; keywords
     (merge {:author (:site-author (config/config))
             :site-title (:site-title (config/config))
             :categories (tag-sidebar-list)
@@ -235,9 +243,9 @@
         description (if (and (> limit 0) (> (count @content) limit))
                       (str (subs @content 0 limit) "… ")
                       @content)
-         description (if (:summary metadata) (:summary metadata) (if (:description metadata) (:description metadata)
-                                                                   (escape-html description)))
-         ]
+        description (if (:summary metadata) (:summary metadata) (if (:description metadata) (:description metadata)
+                                                                    (escape-html description)))
+        ]
     [:item
      [:title (escape-html (:title metadata))]
      [:link  (str (URL. (URL. (:site-url (config/config))) (post-url file)))]
@@ -250,15 +258,15 @@
   (let [in-dir (File. (io/dir-path :posts))
         posts (take 10 (reverse (io/list-files :posts)))]
     (io/write-out-dir "rss-feed"
-                   (hiccup/html (xml-declaration "UTF-8")
-                         (doctype :xhtml-strict)
-                         [:rss {:version "2.0"}
-                          [:channel
-                           [:title (escape-html (:site-title (config/config)))]
-                           [:link (:site-url (config/config))]
-                           [:description
-                            (escape-html (:site-description (config/config)))]
-                           (pmap post-xml posts)]]))))
+                      (hiccup/html (xml-declaration "UTF-8")
+                                   (doctype :xhtml-strict)
+                                   [:rss {:version "2.0"}
+                                    [:channel
+                                     [:title (escape-html (:site-title (config/config)))]
+                                     [:link (:site-url (config/config))]
+                                     [:description
+                                      (escape-html (:site-description (config/config)))]
+                                     (pmap post-xml posts)]]))))
 
 (defn create-sitemap
   "Create sitemap."
@@ -279,7 +287,9 @@
 ;;
 
 (defn tag-map
-  "Create a map of tags and posts contining them. {tag1 => [url1 url2..]}"
+  "Create a map of tags and posts contining them.
+
+  {tag1 => [url1 url2..]}"
   []
   (reduce
    (fn [h v]
@@ -297,7 +307,8 @@
    (filter #(not (nil? (:tags (first (io/read-doc %))))) (io/list-files :posts))))
 
 (defn tag-sidebar-list
-  "create a list with all tags that link to the individual tag entries"
+  "Create a list with all tags that link to the individual tag
+entries."
   []
   (map (fn [[tag posts]]
          {:tag tag :url (url-for-tag tag) :count (count posts)}) (tag-map)))
@@ -313,7 +324,8 @@
                           :template (:list-template (config/config))
                           :description (:site-description (config/config))}
                 enhanced-meta (enhance-metadata metadata)
-                ;; the 2nd positon is the fp which we use to get all info from this post:
+                ;; The 2nd positon is the fp which we use to get all
+                ;; info from this post:
                 content (map #(create-post-meta (nth % 2)) (reverse posts))]
             (io/write-out-dir (url-for-tag tag)
                               (template [enhanced-meta [[tag content]]]))))
@@ -339,10 +351,10 @@
         older (str "/latest-posts/" (- page 1) "/")
         newer (str "/latest-posts/" (+ page 1) "/")]
     (cond
-     (< count-total posts-per-page) nil
-     (= page max-index) {:older older}
-     (= page 0) {:newer newer}
-     :default {:newer newer :older older})))
+      (< count-total posts-per-page) nil
+      (= page max-index) {:older older}
+      (= page 0) {:newer newer}
+      :default {:newer newer :older older})))
 
 (defn create-latest-posts
   "Create and write latest post pages."
@@ -356,11 +368,11 @@
         [_ max-index] (last pages)]
     (doseq [[posts page] pages]
       (let [pager-data (pager page max-index posts-per-page)
-            ;; don't add page extension for first page / index:
+            ;; Don’t add page extension for first page / index:
             title-extension (if (< page max-index)
                               (format (:site-title-page (config/config)) (+ page 1))
                               "")
-            ;; create metadata for page
+            ;; Create metadata for page.
             metadata {:title (str (:site-title (config/config)) title-extension)
                       :description (:site-description (config/config))
                       :template (:default-template (config/config))
@@ -376,7 +388,9 @@
 ;;
 
 (defn post-count-by-mount
-  "Create a map of month to post count {month => count}"
+  "Create a map of month to post count.
+
+{month => count}"
   []
   (->> (io/list-files :posts)
        (reduce (fn [h v]
@@ -389,8 +403,9 @@
        reverse))
 
 (defn create-archives-one-page
-  "Create and write archive pages
-   Write one single page that lists everything"
+  "Create and write archive pages.
+
+Write one single page that lists everything."
   []
   (let [files (map #(create-post-meta %) (io/list-files :posts))
         sorted (reverse (sort-by :javadate files))
@@ -403,9 +418,10 @@
 
 (defn create-archives-by-month
   "Create and write archive pages.
-   Write a page for each month and a page listing all months"
+
+Write a page for each month and a page listing all months."
   []
-  ;;create main archive page.
+  ;; Create main archive page.
   (let [meta (enhance-metadata {:title (:archives-title (config/config)) :template (:list-template (config/config))})
         content (map (fn [[mount count]]
                        {:title (str (parse-date "yyyy-MM" (:date-format-archive (config/config)) mount) "(" count ")")
@@ -417,8 +433,8 @@
                         :footnotes []}
                        ) (post-count-by-mount))]
     (io/write-out-dir (str "archives/index.html") (template [meta content])))
-  
-  ;;create a page for each month.
+
+  ;; Create a page for each month.
   (dorun
    (pmap
     (fn [month]
@@ -427,9 +443,9 @@
                                  (FilenameUtils/getBaseName (str %)) month))
                        reverse)
             metadata (enhance-metadata {:title (str (:archives-title (config/config)) (format (:archives-title-month (config/config)) month))
-                              :template (:list-template (config/config))})
+                                        :template (:list-template (config/config))})
             content (map create-post-meta posts)]
-        ;(println "content" content)
+        ;; (println "content" content)
         (io/write-out-dir
          (str "archives/" (.replace month "-" "/") "/index.html")
          (template [metadata content]))))
@@ -477,8 +493,8 @@
   (let [in-dir (File. (io/dir-path :public))
         out-dir (File. (:out-dir (config/config)))]
     (doseq [f (map #(File. in-dir %) (.list in-dir))]
-      ; we ignore files in public that start with _ as these are
-      ; html templates
+      ;; we ignore files in public that start with _ as these are html
+      ;; templates
       (if (.isFile f)
         (when (not (= \_ (first (FilenameUtils/getBaseName (str f)))))
           (FileUtils/copyFileToDirectory f out-dir))
@@ -486,7 +502,7 @@
       )))
 
 (defn load-base-template
-  "load the base template, that contains template defaults"
+  "Load the base template, that contains template defaults."
   []
   (binding [*ns* (the-ns 'static.core)]
     (let [filepath (str (io/dir-path :templates)
@@ -500,17 +516,18 @@
 (defn create
   "Build Site."
   []
-  ;; During watching, we don't delete everything, as that'll make any change
-  ;; detection libs come up with a 404. So, it's best to do a final 'create' before deployment
+  ;; During watching, we don't delete everything, as that'll make any
+  ;; change detection libs come up with a 404. So, it's best to do a
+  ;; final 'create' before deployment.
   (when (nil? watch-mode)
     (doto (File. (:out-dir (config/config)))
       (FileUtils/deleteDirectory)
       (.mkdir)))
 
-  ;; make sure the memoziation returns new values
+  ;; Make sure the memoziation returns new values.
   (io/memo-increase)
 
-  ; Import the template helpers
+  ;; Import the template helpers.
   (load-base-template)
 
   (log-time-elapsed "Processing Public " (process-public))
@@ -528,12 +545,12 @@
     (log-time-elapsed "Creating Aliases " (create-aliases))
 
     (when (:blog-as-index (config/config))
-      ;; Create the latest-post archives, i.e. create a index.html with n posts
-      ;; under latest-posts/ and link them together
+      ;; Create the latest-post archives, i.e. create a index.html
+      ;; with n posts under latest-posts/ and link them together.
       (binding [blog-index true]
         (log-time-elapsed "Creating Latest Posts " (create-latest-posts)))
 
-      ;; copy the very last index.html over to / as the current index
+      ;; Copy the very last index.html over to / as the current index.
       (let [max (apply max (map read-string (-> (:out-dir (config/config))
                                                 (str  "latest-posts/")
                                                 (File.)
@@ -562,7 +579,7 @@
                       (log/info "Rebuilding site...")
                       (try
 
-                        ;; bind the 'watching' metdata
+                        ;; Bind the 'watching' metdata.
                         (binding [watch-mode true]
                           (create))
 
@@ -571,7 +588,8 @@
 
 (defn -main [& args]
   (let [[opts _ banner]
-        (cli/cli args ;; TODO: cli/cli is deprecated
+        ;; TODO: cli/cli is deprecated.
+        (cli/cli args
                  ["--build" "Build Site." :default false :flag true]
                  ["--tmp" "Use tmp location override :out-dir" :default false :flag true]
                  ["--jetty" "View Site." :default false :flag true]

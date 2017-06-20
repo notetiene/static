@@ -8,9 +8,9 @@
            (org.apache.commons.io FileUtils FilenameUtils)
            (org.pegdown PegDownProcessor)))
 
-;; In order to support memoziation and also support the 'watch' parameter
-;; We add an atom with a parameter that is increased whenever a new watch build
-;; starts
+;; In order to support memoziation and also support the 'watch'
+;; parameter We add an atom with a parameter that is increased
+;; whenever a new watch build starts.
 
 (def memo-param (atom 0))
 (defn memo-increase []
@@ -23,7 +23,7 @@
 (defn- prepare-metadata [metadata]
   (reduce (fn [h [_ k v]]
             (let [key (keyword (.toLowerCase k))
-                   ;; create a list of keyword tags
+                   ;; Create a list of keyword tags.
                    h (case key
                        :tags (assoc h :keyword-tags (map keyword (clojure.string/split v #" ")))
                        :keywords (assoc h :keyword-keywords (map keyword (clojure.string/split v #" ")))
@@ -42,36 +42,39 @@
     {} (re-seq #"([^:#\+]+): (.+) (\-\-\>)" metadata))
   )
 
-(defn- parse-markdown-footnotes [markdown]
-  "Since pegdown has no footnotes-support, we will just do
-   some replacement on the markdown itself in order to
-   generate footnotes.
+(defn- parse-markdown-footnotes
+  "Since pegdown has no footnotes-support, we will just do some
+replacement on the markdown itself in order to generate footnotes.
 
-   This is very limited footnotes support. Right now
-   the only markdown footnotes support is using [^name] in the text
-   and at the bottom [^name]: text\n. Everything in one line.
-   Additions welcome :)"
+This is very limited footnotes support. Right now the only markdown
+footnotes support is using [^name] in the text and at the
+bottom [^name]: text\n. Everything in one line.  Additions
+welcome :)"
+  [markdown]
   (let [fo-reg #"\[\^[a-zA-Z0-9]*?\]\:.+\n"
         fos (re-seq fo-reg markdown)]
     (if (> (count fos) 0)
-      ;; create the footnotes
+      ;; Create the footnotes.
       (let [md1 (reduce (fn [[results markdown] footnote]
                           [(conj results {:text (last (clojure.string/split footnote #":" 2))
                                           :ref (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
                                           :id (str "#fn" (last (re-find #"\d" footnote)))})
                            (-> markdown
-                               ;; replace the original footnote with nothing
+                               ;; Replace the original footnote with
+                               ;; nothing.
                                (clojure.string/replace footnote "")
-                               ;; replace the text-footnote with an anchor/name
+                               ;; Replace the text-footnote with an
+                               ;; anchor/name.
                                (clojure.string/replace
                                 (first (clojure.string/split footnote #":" 2))
                                 (format "<sup><a name='fn%s' href='#%s'>%s</a></sup>"
-                                        (last (re-find #"\d" footnote)); only the first number
+                                        ;; Only the first number.
+                                        (last (re-find #"\d" footnote))
                                         (last (re-find #"\[\^([0-9a-zA-Z]+)\]" footnote))
                                         (last (re-find #"\d" footnote)))))])
                         [[] markdown] fos)]
         md1)
-      ;; else return no footnotes
+      ;; Else return no footnotes.
       [[] markdown])))
 
 (defn- read-markdown [file]
@@ -79,7 +82,7 @@
         (split-file (slurp file :encoding (:encoding (config/config))))
         [footnotes content] (parse-markdown-footnotes content)]
     [(assoc (prepare-metadata metadata) :footnotes footnotes)
-     ;(delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
+     ;; (delay (.markdownToHtml (PegDownProcessor. org.pegdown.Extensions/TABLES) content))
      (delay (.markdownToHtml (PegDownProcessor.
                               (int
                                (bit-or org.pegdown.Extensions/TABLES
@@ -107,7 +110,10 @@
                                          " (find-file \""
                                          (.getAbsolutePath file)
                                          "\") "
-                                         ;; let the user run additional code from his config after a file has been loaded
+                                         ;; Let the user run
+                                         ;; additional code from his
+                                         ;; config after a file has
+                                         ;; been loadedé
                                          (when-let [g (:emacs-custom-setup (config/config))] g)
                                          (:org-export-command (config/config))
                                          ")")
@@ -118,7 +124,7 @@
          ]
     [(merge content-meta metadata) content]))
 
-;; We really need to parse each file once. So we memoize the results
+;; We really need to parse each file once. So we memoize the results.
 (def read-org
   (memoize slow-read-org))
 
