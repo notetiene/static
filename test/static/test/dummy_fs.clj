@@ -1,3 +1,20 @@
+;;; dummy_fs.clj --- Module to create a dummy file system to test static.
+;; Keywords: test, static, file, directory
+;; Last-Updated: Tue Jun 20 12:48:10 (EDT) 2017 by etienne
+;; Created: 2017-06-20
+
+;; License: Eclipse Public License
+
+;; Copyright (c) 2017 Etienne Prud’homme
+
+;; All rights reserved. This program and the accompanying materials
+;; are made available under the terms of the Eclipse Public License
+;; v1.0 which accompanies this distribution, and is available at
+;; http://www.eclipse.org/legal/epl-v10.html
+
+;;; Commentary:
+;;; Code:
+
 (ns static.test.dummy-fs
   (:import (java.io File)))
 
@@ -7,33 +24,36 @@
   ^:private
   (clojure.string/trim (:out (clojure.java.shell/sh "which" "emacs"))))
 
-(defn- create-resources []
+(defn- create-resources
+  "Make “resources” directories."
+  []
   (.mkdir (File. "resources/"))
   (.mkdir (File. "resources/site/"))
   (.mkdir (File. "resources/public/"))
   (.mkdir (File. "resources/posts/"))
   (.mkdir (File. "resources/templates/")))
 
-(defn- create-site []
+(defn- create-site
+  "Create dummy site entry."
+  []
   (spit (File. "resources/site/dummy.markdown")
-	"---
+        "---
 title: dummy content
 description: some dummy desc
 tags: unit test
 ---
 
 Some dummy file for unit testing.")
-
   (spit (File. "resources/site/style.cssgen")
         "[[:body :font-size :1em]]")
-  
   (spit (File. "resources/site/dummy_clj.clj")
-	"{:title \"Dummy Clj File\"}
-(map #(static.core/create-post-meta %) (take 2 (reverse (static.io/list-files :posts))))")
-)
+        "{:title \"Dummy Clj File\"}
+(map #(static.core/create-post-meta %) (take 2 (reverse (static.io/list-files :posts))))"))
 
-(defn- create-dummy-posts []
-  (spit 
+(defn- create-dummy-posts
+  "Create dummy posts for testing."
+  []
+  (spit
    (File. "resources/posts/2050-01-01-dummy-future-post-1.markdown")
    "---
 TITLE: dummy future post 1
@@ -42,8 +62,7 @@ TEMPLATE: temp.clj
 ---
 
 text dummy post 1")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-02-02-dummy-future-post-2.markdown")
    "---
 title: dummy future post 2
@@ -52,8 +71,7 @@ template: temp.clj
 ---
 
 text dummy post 2")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-03-03-dummy-future-post-3.markdown")
    "---
 title: dummy future post 3
@@ -61,8 +79,7 @@ tags: 45f5 8a0c same
 ---
 
 text dummy post 3")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-04-04-dummy-future-post-4.markdown")
    "---
 title: dummy future post 4
@@ -72,8 +89,7 @@ alias: [\"/first-alias/index.html\", \"/second-alias/index.html\"]
 ---
 
 text dummy post 4")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-05-05-dummy-future-post-5.markdown")
    "---
 title: dummy future post 5
@@ -82,8 +98,7 @@ published: false
 ---
 
 Should be skipped...")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-06-06-dummy-future-post-6.html")
    "---
 title: org-jekyll entry
@@ -97,11 +112,10 @@ CATEGORY: test
 <h2 id=\"sec-1\"><a href=\"test.html\">First blog entry </a></h2>
 <div class=\"outline-text-2\" id=\"text-1\">
 
-<p>With some content in the first entry. 
+<p>With some content in the first entry.
 </p></div>
 </div>")
-
-  (spit 
+  (spit
    (File. "resources/posts/2050-07-07-dummy-future-post-7.org")
    "#+title: Dummy org-mode post
 #+tags: org-mode org-babel
@@ -116,17 +130,18 @@ Sum 1 and 2
 #+END_SRC
 
 ")
-
-(spit 
- (File. "resources/posts/2050-08-08-dummy-future-post-8.org")
- "
+  (spit
+   (File. "resources/posts/2050-08-08-dummy-future-post-8.org")
+   "
 #+title: dummy future post 8
 #+tags: 45f5 8a06 same
 #+alias: [\"/a/b/c/alias/index.html\"]
 
 org alias test"))
 
-(defn- create-html-template []
+(defn- create-html-template
+  "Create the HTML template for testing."
+  []
   (spit (File. "resources/public/_index.html") "
 <html>
 <head><title>title</title></head>
@@ -142,7 +157,9 @@ org alias test"))
 </html>
 "))
 
-(defn- create-base-template []
+(defn- create-base-template
+  "Create the base Clojure template for testing."
+  []
   (spit (File. "resources/templates/base.clj") "(def base-template-file (static.core/template-path \"_index.html\"))
 
 (enlive/defsnippet article-template base-template-file [:article]
@@ -158,8 +175,10 @@ org alias test"))
   )
 "))
 
-(defn- create-template []
-  ; Create the default template, that creates the selectors (for a better example have a look at my blog repo)
+(defn- create-template
+  "Create the default template, that creates the selectors (for a
+  better example have a look at my blog repo)."
+  []
   (spit (File. "resources/templates/temp.clj") "
 (define-template base-template-file
      [:head :title] (enlive/content (if-let [t (:title metadata)] t (:site-title metadata)))
@@ -167,17 +186,23 @@ org alias test"))
      [:#list] nil
   ) "))
 
-(defn- create-list-template []
+(defn- create-list-template
+  "Create the lits template that contains the menu entries."
+  []
   (spit (File. "resources/templates/list.clj") "(define-template base-template-file
      [:head :title] (enlive/content (if-let [t (:title metadata)] t (:site-title metadata)))
      [:#content] (enlive/content (map #(list-template %) content))
      ;[:#list] nil
   )"))
 
-(defn- create-static-file []
+(defn- create-static-file
+  "Create a static file (no processing) for testing."
+  []
   (spit (File. "resources/public/dummy.static") "Hello, World!!"))
 
-(defn- create-config []
+(defn- create-config
+  "Create the configuration file for testing a new test project."
+  []
   (spit (File. "config.clj")
         (format "[:site-title \"Dummy Site\"
  :site-description \"Dummy Description\"
@@ -191,7 +216,9 @@ org alias test"))
  :blog-as-index true
  :emacs \"%s\"]" emacs-executable)))
 
-(defn create-dummy-fs []
+(defn create-dummy-fs
+  "Create the dummy file structure used for testing."
+  []
   (create-resources)
   (create-site)
   (create-static-file)
@@ -201,3 +228,9 @@ org alias test"))
   (create-template)
   (create-list-template)
   (create-config))
+
+;;; dummy_fs.clj<test> ends here
+
+;; Local Variables:
+;; coding: utf-8
+;; End:

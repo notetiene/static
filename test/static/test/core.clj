@@ -1,3 +1,21 @@
+;;; core.clj --- Ts
+;; Keywords: test, clojure, static, web, org-mode, emacs, html
+;; Last-Updated: Tue Jun 20 13:37:00 (EDT) 2017 by etienne
+;; Created: 2017-06-20
+
+;; License: Eclipse Public License
+
+;; Copyright (c) 2017 Etienne Prud’homme
+
+;; All rights reserved. This program and the accompanying materials
+;; are made available under the terms of the Eclipse Public License
+;; v1.0 which accompanies this distribution, and is available at
+;; http://www.eclipse.org/legal/epl-v10.html
+
+;;; Commentary:
+;;; Code:
+
+
 (ns static.test.core
   (:require [clojure.test :refer :all]
             [static.core :refer :all]
@@ -6,10 +24,14 @@
   (:import (java.io File)
            (org.apache.commons.io FileUtils)))
 
-(defn delete-file-recursively [f]
+(defn delete-file-recursively
+  "Delete files recursively."
+  [f]
   (FileUtils/deleteDirectory f))
 
-(defn dummy-fs-fixture [f]
+(defn dummy-fs-fixture
+  "Clean the dummy file system structre."
+  [f]
   (setup-logging)
   (create-dummy-fs)
   (create)
@@ -28,12 +50,13 @@
     (is (= "Some dummy file for unit testing."
            (re-find #"Some dummy file for unit testing." @content)))))
 
-;; I've removed the org test, as it requires the corret setup of emacs
-;;(deftest test-org
-;;  (let [[metadata content] (read-doc (File. "resources/posts/2050-07-07-dummy-future-post-7.org"))]
-;;    (is (= "org-mode org-babel"  (:tags metadata)))
-;;    (is (= "Dummy org-mode post" (:title metadata)))
-;;    (is (= "Sum 1 and 2" (re-find #"Sum 1 and 2" @content)))))
+;; I’ve removed the org test, as it requires the corret setup of
+;; Emacs.
+;; (deftest test-org
+;;   (let [[metadata content] (read-doc (File. "resources/posts/2050-07-07-dummy-future-post-7.org"))]
+;;     (is (= "org-mode org-babel"  (:tags metadata)))
+;;     (is (= "Dummy org-mode post" (:title metadata)))
+;;     (is (= "Sum 1 and 2" (re-find #"Sum 1 and 2" @content)))))
 
 (deftest test-clj
   (let [[metadata content] (read-doc (File. "resources/site/dummy_clj.clj"))]
@@ -129,3 +152,9 @@
     (is (= "<h1>dummy content</h1>"
            (re-find #"<h1>dummy content</h1>" (slurp html))))
     (is (= "Hello, World!!" (re-find #"Hello, World!!" (slurp static))))))
+
+;;; core.clj<test> ends here
+
+;; Local Variables:
+;; coding: utf-8
+;; End:
